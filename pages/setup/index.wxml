@@ -1,0 +1,40 @@
+<view class="container">
+  <view class="header">
+    <view class="icon-wrap">
+      <t-icon name="sparkles" size="32px" color="#9333ea" />
+    </view>
+    <view class="title">连接你的爱宠</view>
+    <view class="subtitle">创建专属于你的数字分身，跨越时空陪伴</view>
+  </view>
+
+  <view class="form">
+    <view class="form-group">
+      <view class="label">爱宠昵称</view>
+      <input class="input-text" placeholder="例如：糯米" model:value="{{name}}" />
+    </view>
+
+    <view class="type-selector">
+      <view class="type-btn {{type === 'cat' ? 'active' : ''}}" data-type="cat" bindtap="selectType">
+        <text class="emoji">🐱</text>
+        <text>猫咪</text>
+      </view>
+      <view class="type-btn {{type === 'dog' ? 'active' : ''}}" data-type="dog" bindtap="selectType">
+        <text class="emoji">🐶</text>
+        <text>狗狗</text>
+      </view>
+    </view>
+
+    <view class="form-group">
+      <view class="label">上传照片 (用于生成数字分身)</view>
+      <view class="upload-area" bindtap="chooseImage">
+        <image wx:if="{{image}}" src="{{image}}" mode="aspectFill" class="preview-img"></image>
+        <view wx:else class="upload-placeholder">
+          <t-icon name="upload" size="32px" color="#9ca3af" />
+          <text>点击上传照片</text>
+        </view>
+      </view>
+    </view>
+
+    <button class="submit-btn" disabled="{{!name || !image}}" bindtap="handleSubmit">开始连接</button>
+  </view>
+</view>

@@ -1,0 +1,159 @@
+<view class="dashboard-container">
+  <!-- Header -->
+  <view class="header" wx:if="{{pet}}">
+    <view>
+      <view class="pet-name">{{pet.name}}</view>
+      <view class="status-badge">
+        <view class="dot"></view>
+        <view class="status-text">{{statusConfig[pet.currentStatus].label}}</view>
+      </view>
+    </view>
+    <view class="sensors-flex">
+      <view class="sensor-box">
+        <t-icon name="battery" size="14px" color="#22c55e" />
+        <text>{{sensors.battery}}%</text>
+      </view>
+      <view class="sensor-box">
+        <t-icon name="app" size="14px" color="#fb923c" />
+        <text>{{sensors.temp}}°</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Video / Image Display Area -->
+  <view class="visual-area" wx:if="{{pet}}">
+    <view class="video-container">
+      <view class="live-indicator">
+        <view class="live-dot {{(videoError || videoDisabled) ? 'offline' : ''}}"></view>
+        <text>{{(videoError || videoDisabled) ? 'PREVIEW' : 'LIVE'}}</text>
+      </view>
+
+      <!-- Only show video component if video is NOT disabled -->
+      <video 
+        wx:if="{{videoSrc && !videoError && !videoDisabled}}"
+        src="{{videoSrc}}"
+        class="video-player"
+        autoplay
+        loop
+        muted
+        object-fit="cover"
+        controls="{{false}}"
+        show-center-play-btn="{{false}}"
+        show-play-btn="{{false}}"
+        show-fullscreen-btn="{{false}}"
+        show-progress="{{false}}"
+        enable-progress-gesture="{{false}}"
+        binderror="handleVideoError"
+      ></video>
+
+      <!-- Fallback: show pet image -->
+      <view wx:else class="fallback-container">
+        <image
+          src="{{pet.baseImage}}"
+          mode="aspectFill"
+          class="fallback-img"
+        ></image>
+        <!-- Animated status emoji overlay -->
+        <view class="status-emoji-overlay">
+          <text class="status-emoji-big">{{statusConfig[pet.currentStatus].icon}}</text>
+        </view>
+        <!-- Platform notice (only show once when video is disabled) -->
+        <view class="platform-notice" wx:if="{{videoDisabled}}">
+          <text class="platform-notice-text">📱 视频需在真机上预览</text>
+        </view>
+      </view>
+
+      <!-- Controls overlays -->
+      <view class="controls">
+        <view class="control-btn" bindtap="triggerHaptic">
+          <t-icon name="heart" size="24px" color="#ec4899" />
+        </view>
+        <view class="control-btn" bindtap="toggleChat">
+          <t-icon name="chat" size="24px" color="#9333ea" />
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Status Selectors -->
+  <view class="status-buttons-area" wx:if="{{pet}}">
+    <view class="section-title-flex">
+      <view class="section-title">当前状态</view>
+      <view class="live-sync-switch">
+        <text>云端同步</text>
+        <switch checked="{{isLiveSync}}" bindchange="onLiveSyncChange" color="#a855f7" style="transform: scale(0.7); margin-right: -16rpx;" />
+      </view>
+    </view>
+    <view class="grid-4">
+      <block wx:for="{{statusList}}" wx:key="*this">
+        <view 
+          class="status-btn {{pet.currentStatus === item ? 'active' : ''}}"
+          data-status="{{item}}"
+          bindtap="handleStatusChange"
+        >
+          <text class="s-icon">{{statusConfig[item].icon}}</text>
+          <text class="s-label">{{statusConfig[item].label}}</text>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <!-- Chat Modal -->
+  <view class="chat-overlay" wx:if="{{showChat}}" catchtouchmove="preventScroll">
+    <view class="chat-mask" bindtap="toggleChat"></view>
+    <view class="chat-modal">
+      <view class="chat-header">
+        <view class="chat-pet-info">
+          <image src="{{pet.baseImage}}" class="chat-avatar" mode="aspectFill"></image>
+          <view>
+            <view class="chat-name">{{pet.name}}</view>
+            <view class="chat-status-badge">
+              <text>{{statusConfig[pet.currentStatus].label}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="close-btn" bindtap="toggleChat">✕</view>
+      </view>
+
+      <scroll-view class="chat-messages" scroll-y scroll-top="{{scrollTop}}" enhanced="{{true}}" show-scrollbar="{{false}}">
+        <view class="chat-empty" wx:if="{{chatHistory.length === 0}}">
+          <view class="chat-empty-icon">💭</view>
+          <text class="chat-empty-text">发送消息给 {{pet.name}}...\n它可以感知你的想法</text>
+        </view>
+        <block wx:for="{{chatHistory}}" wx:key="index">
+          <view class="message-row {{item.sender}}">
+            <view class="message-bubble">{{item.text}}</view>
+          </view>
+        </block>
+        <view class="message-row pet" wx:if="{{isTyping}}">
+          <view class="message-bubble typing">
+            <view class="typing-dots">
+              <view class="typing-dot"></view>
+              <view class="typing-dot"></view>
+              <view class="typing-dot"></view>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="chat-input-area">
+        <view class="input-box">
+          <input 
+            class="chat-input" 
+            placeholder="说点什么..." 
+            value="{{chatMessage}}" 
+            bindinput="handleChatInput" 
+            confirm-type="send" 
+            bindconfirm="sendMessage"
+            adjust-position="{{true}}"
+            cursor-spacing="20"
+          />
+          <button class="send-btn" disabled="{{!chatMessage}}" bindtap="sendMessage">
+            <t-icon name="send" size="18px" color="#ffffff" />
+          </button>
+        </view>
+        <view class="safe-area-bottom"></view>
+      </view>
+    </view>
+  </view>
+</view>

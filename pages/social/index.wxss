@@ -1,0 +1,99 @@
+.container {
+  min-height: 100vh;
+  background-color: #F9FAFB;
+  padding-bottom: 140rpx;
+}
+
+.post-card {
+  background-color: #ffffff;
+  margin-bottom: 16rpx;
+  border-top: 1rpx solid #f3f4f6;
+  border-bottom: 1rpx solid #f3f4f6;
+  padding-bottom: 24rpx;
+}
+
+.post-header {
+  padding: 20rpx 28rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.author-info {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.avatar {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+}
+
+.author-name {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #111827;
+}
+
+.pet-name {
+  font-size: 22rpx;
+  color: #6b7280;
+}
+
+.post-image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background-color: #f3f4f6;
+}
+
+.post-actions {
+  padding: 20rpx 28rpx;
+  display: flex;
+  gap: 28rpx;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+}
+
+.action-btn:active {
+  opacity: 0.6;
+  transform: scale(0.92);
+}
+
+.likes-count {
+  padding: 0 28rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+  margin-bottom: 12rpx;
+}
+
+.post-content {
+  padding: 0 28rpx;
+  font-size: 28rpx;
+  color: #1f2937;
+  line-height: 1.5;
+}
+
+.author-bold {
+  font-weight: bold;
+  margin-right: 12rpx;
+}
+
+.post-time {
+  padding: 0 28rpx;
+  font-size: 20rpx;
+  color: #9ca3af;
+  margin-top: 12rpx;
+  letter-spacing: 1rpx;
+}
+
+.footer-msg {
+  text-align: center;
+  padding: 48rpx 0;
+  font-size: 24rpx;
+  color: #9ca3af;
+}

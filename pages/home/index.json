@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "宠伴",
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon"
+  }
+}

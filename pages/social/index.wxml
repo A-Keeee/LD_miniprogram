@@ -1,0 +1,47 @@
+<view class="container">
+  <view class="feed-list">
+    <block wx:for="{{posts}}" wx:key="id">
+      <view class="post-card">
+        <!-- Post Header -->
+        <view class="post-header">
+          <view class="author-info">
+            <image src="{{item.avatar}}" class="avatar" mode="aspectFill"></image>
+            <view>
+              <view class="author-name">{{item.author}}</view>
+              <view class="pet-name">与 {{item.petName}}</view>
+            </view>
+          </view>
+          <t-icon name="ellipsis" size="20px" color="#9ca3af" />
+        </view>
+        
+        <!-- Post Image -->
+        <image src="{{item.imageUrl}}" class="post-image" mode="aspectFill"></image>
+        
+        <!-- Post Actions -->
+        <view class="post-actions">
+          <view class="action-btn">
+            <t-icon name="heart" size="24px" color="#374151" />
+          </view>
+          <view class="action-btn">
+            <t-icon name="chat" size="24px" color="#374151" />
+          </view>
+          <view class="action-btn">
+            <t-icon name="share" size="24px" color="#374151" />
+          </view>
+        </view>
+        
+        <view class="likes-count">{{item.likes}} 次赞</view>
+        
+        <!-- Post Content -->
+        <view class="post-content">
+          <text class="author-bold">{{item.author}}</text>
+          <text>{{item.description}}</text>
+        </view>
+        
+        <view class="post-time">{{item.timestampStr}}</view>
+      </view>
+    </block>
+  </view>
+  
+  <view class="footer-msg">- 到底了，去陪陪你的宠物吧 -</view>
+</view>

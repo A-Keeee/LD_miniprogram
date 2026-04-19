@@ -1,0 +1,40 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/social/index",
+    "pages/setting/index",
+    "pages/setup/index"
+  ],
+  "usingComponents": {
+    "t-toast": "tdesign-miniprogram/toast/toast",
+    "t-icon": "tdesign-miniprogram/icon/icon"
+  },
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#fff",
+    "navigationBarTitleText": "宠伴",
+    "navigationBarTextStyle": "black"
+  },
+  "tabBar": {
+    "custom": true,
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "陪伴"
+      },
+      {
+        "pagePath": "pages/social/index",
+        "text": "宠圈"
+      },
+      {
+        "pagePath": "pages/setting/index",
+        "text": "设置"
+      }
+    ]
+  },
+  "resolveAlias": {
+    "~/*": "/*"
+  },
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation": "sitemap.json"
+}

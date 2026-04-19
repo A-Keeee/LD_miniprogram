@@ -1,0 +1,85 @@
+<view class="container">
+  <view class="card">
+    <view class="card-header">
+      <t-icon name="server" size="20px" color="#7e22ce" />
+      <text class="card-title">视频内容设置</text>
+    </view>
+    
+    <view class="form-group">
+      <view class="label">提供商 (Provider)</view>
+      <view class="provider-options">
+        <view 
+          class="provider-btn {{settings.provider === 'LOCAL' ? 'active' : ''}}" 
+          data-provider="LOCAL" 
+          bindtap="setProvider"
+        >
+          <view class="p-title">本地预设 (Local)</view>
+          <view class="p-desc">使用预置/远程备链演示视频</view>
+        </view>
+        <view 
+          class="provider-btn {{settings.provider === 'KLING_AI' ? 'active' : ''}}" 
+          data-provider="KLING_AI" 
+          bindtap="setProvider"
+        >
+          <view class="p-title">AI 短视频生成</view>
+          <view class="p-desc">通过 AI 自动生成动态视频（未开放）</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- API Settings section shown if KLING_AI -->
+    <view class="api-settings" wx:if="{{settings.provider === 'KLING_AI'}}">
+      <view class="form-group">
+        <view class="label">API Key</view>
+        <view class="input-wrap">
+          <t-icon name="lock-on" size="16px" color="#9ca3af" class="input-icon" />
+          <input 
+            class="input-box" 
+            password="{{true}}" 
+            placeholder="sk-..." 
+            value="{{settings.apiKey}}" 
+            data-field="apiKey"
+            bindinput="handleInput"
+          />
+        </view>
+      </view>
+      
+      <view class="form-group">
+        <view class="label">模型名称 (Model)</view>
+        <view class="input-wrap">
+          <t-icon name="app" size="16px" color="#9ca3af" class="input-icon" />
+          <input 
+            class="input-box" 
+            placeholder="例如: kling-v1" 
+            value="{{settings.modelName}}" 
+            data-field="modelName"
+            bindinput="handleInput"
+          />
+        </view>
+      </view>
+
+      <view class="form-group">
+        <view class="label">Endpoint (可选)</view>
+        <input 
+          class="input-box no-icon" 
+          placeholder="https://..." 
+          value="{{settings.apiEndpoint}}" 
+          data-field="apiEndpoint"
+          bindinput="handleInput"
+        />
+      </view>
+    </view>
+  </view>
+  
+  <view class="info-box">
+    <t-icon name="info-circle" size="18px" color="#1d4ed8" />
+    <view class="info-text">
+      注：对话功能的 AI API 已在代码中作为内嵌设置，当前页面仅用于配置视频生成接口。
+    </view>
+  </view>
+  
+  <button class="save-btn {{saved ? 'saved' : ''}}" bindtap="handleSave">
+    <t-icon wx:if="{{!saved}}" name="save" size="20px" color="#ffffff" />
+    <text style="margin-left:8px;">{{saved ? '已保存!' : '保存设置'}}</text>
+  </button>
+</view>

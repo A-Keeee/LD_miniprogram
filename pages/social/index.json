@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "宠圈",
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon"
+  }
+}

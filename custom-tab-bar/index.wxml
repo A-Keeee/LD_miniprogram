@@ -1,0 +1,7 @@
+<view wx:if="{{show}}">
+  <t-tab-bar value="{{ value }}" theme="tag" split="{{ false }}" bind:change="handleChange">
+    <t-tab-bar-item icon="home" value="home">陪伴</t-tab-bar-item>
+    <t-tab-bar-item icon="usergroup" value="social">宠圈</t-tab-bar-item>
+    <t-tab-bar-item icon="setting" value="setting">设置</t-tab-bar-item>
+  </t-tab-bar>
+</view>
