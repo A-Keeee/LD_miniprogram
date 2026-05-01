@@ -1,6 +1,7 @@
 import { PetStatus } from '../../utils/types.js';
 import { getPetStatusVideo, getRemoteFallback } from '../../utils/services/videoService.js';
 import { chatWithPet } from '../../utils/services/geminiService.js';
+import { cloudConfig } from '../../config/index.js';
 
 const app = getApp();
 
@@ -23,9 +24,16 @@ Page({
       [PetStatus.SLEEPING]: { label: '睡觉', icon: '💤' },
       [PetStatus.PLAYING]:  { label: '跑步', icon: '🐾' },
       [PetStatus.EATING]:   { label: '吃饭', icon: '🥣' },
-      [PetStatus.WAITING]:  { label: '张望', icon: '👀' }
+      [PetStatus.WAITING]:  { label: '张望', icon: '👀' },
+      [PetStatus.SHAKING]:  { label: '抖动身体', icon: '〰️' }
     },
-    statusList: [PetStatus.SLEEPING, PetStatus.PLAYING, PetStatus.EATING, PetStatus.WAITING]
+    statusList: [
+      PetStatus.SLEEPING,
+      PetStatus.PLAYING,
+      PetStatus.EATING,
+      PetStatus.WAITING,
+      PetStatus.SHAKING
+    ]
   },
 
   // Track retry state (not in data to avoid extra renders)
@@ -75,7 +83,7 @@ Page({
     if (this._socketTask) return;
     
     this._socketTask = wx.connectSocket({
-      url: 'ws://8.156.34.152:4535',
+      url: cloudConfig.inferenceSocketUrl,
       fail: (err) => console.error('WebSocket connect fail', err)
     });
 
@@ -127,8 +135,8 @@ Page({
       case 'Walk':
       case 'Run': return PetStatus.PLAYING;
       case 'Feed': return PetStatus.EATING;
-      case 'Groom':
-      case 'Shake': return PetStatus.WAITING;
+      case 'Groom': return PetStatus.WAITING;
+      case 'Shake': return PetStatus.SHAKING;
       default: return null;
     }
   },

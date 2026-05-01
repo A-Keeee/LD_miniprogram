@@ -3,4 +3,8 @@ export const config = {
   useMock: true,
 };
 
-export default { config };
+export const cloudConfig = {
+  inferenceSocketUrl: 'ws://8.156.34.152:4535',
+};
+
+export default { config, cloudConfig };
