@@ -10,8 +10,8 @@
 
 | 功能 | 说明 |
 |------|------|
-| **实时视频 / 备用图片** | 展示宠物实时视频，若解码失败自动回退远程图片。 |
-| **状态徽章** | 根据宠物当前状态（睡觉、跑步、吃饭、张望）显示对应 Emoji。 |
+| **实时视频 / 备用视频** | 展示宠物实时视频，若解码失败自动回退远程视频。 |
+| **状态徽章** | 根据宠物当前状态（睡觉、玩耍、吃饭、等待、抖动身体）显示对应 Emoji。 |
 | **传感器框** | 电池 % 与温度 ℃ 的实时读数，使用 TDesign 图标。 |
 | **控制按钮** | 心形（震动反馈）与聊天按钮。 |
 | **聊天弹层** | 基于 Gemini 的 AI 对话，支持发送/接收消息。 |
@@ -113,7 +113,22 @@ npm run build
 // pages/home/index.js → loadVideo()
 const url = await getPetStatusVideo(pet, settings);
 ```
-- 若本地解码失败，`handleVideoError()` 会尝试一次远端图片回退，随后永久关闭视频播放以防无限重试。
+- 若本地解码失败，`handleVideoError()` 会尝试一次远端视频回退，随后永久关闭视频播放以防无限重试。
+- 本地视频文件会先从小程序包复制到用户目录，再作为 `<video>` 的可播放 `src` 使用。
+
+#### 行为识别结果与视频对应关系
+
+云端推理服务返回的 `behaviour` 会先在 `pages/home/index.js` 中映射为 `PetStatus`，再由 `utils/services/videoService.js` 选择对应视频文件：
+
+| 推理结果 behaviour | 宠物状态 PetStatus | 展示视频 | 视频文件 |
+|-------------------|--------------------|----------|----------|
+| `Rest` | `PetStatus.SLEEPING` | 睡觉视频 | `static/video/sleeping.mp4` |
+| `Walk` / `Run` | `PetStatus.PLAYING` | 玩耍视频 | `static/video/playing.mp4` |
+| `Feed` | `PetStatus.EATING` | 吃饭视频 | `static/video/eating.mp4` |
+| `Groom` | `PetStatus.WAITING` | 等待视频 | `static/video/waiting.mp4` |
+| `Shake` | `PetStatus.SHAKING` | 抖动视频 | `static/video/shaking.mp4` |
+
+> 注意：仓库中也包含 `static/video/grooming.mp4`，但当前 `Groom` 行为按产品定义对应等待视频 `waiting.mp4`。
 
 ### 2. 云端实时同步（WebSocket）
 ```js
