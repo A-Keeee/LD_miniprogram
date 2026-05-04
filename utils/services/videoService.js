@@ -9,6 +9,7 @@ const PACKAGE_VIDEO_FILES = {
   [PetStatus.PLAYING]: 'static/video/playing.mp4',
   [PetStatus.EATING]: 'static/video/eating.mp4',
   [PetStatus.WAITING]: 'static/video/waiting.mp4',
+  [PetStatus.GROOMING]: 'static/video/grooming.mp4',
   [PetStatus.SHAKING]: 'static/video/shaking.mp4',
   [PetStatus.OBSERVING]: 'static/video/waiting.mp4',
 };
@@ -19,6 +20,7 @@ const REMOTE_DEMO_VIDEOS = {
   [PetStatus.PLAYING]: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
   [PetStatus.EATING]: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
   [PetStatus.WAITING]: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+  [PetStatus.GROOMING]: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
   [PetStatus.SHAKING]: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
   [PetStatus.OBSERVING]: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
 };

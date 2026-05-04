@@ -24,7 +24,8 @@ Page({
       [PetStatus.SLEEPING]: { label: '睡觉', icon: '💤' },
       [PetStatus.PLAYING]:  { label: '跑步', icon: '🐾' },
       [PetStatus.EATING]:   { label: '吃饭', icon: '🥣' },
-      [PetStatus.WAITING]:  { label: '张望', icon: '👀' },
+      [PetStatus.WAITING]:  { label: '等待', icon: '👀' },
+      [PetStatus.GROOMING]: { label: '梳理', icon: '🧼' },
       [PetStatus.SHAKING]:  { label: '抖动身体', icon: '〰️' }
     },
     statusList: [
@@ -32,6 +33,7 @@ Page({
       PetStatus.PLAYING,
       PetStatus.EATING,
       PetStatus.WAITING,
+      PetStatus.GROOMING,
       PetStatus.SHAKING
     ]
   },
@@ -130,13 +132,15 @@ Page({
   },
 
   mapBehaviourToStatus(behaviour) {
-    switch(behaviour) {
-      case 'Rest': return PetStatus.SLEEPING;
-      case 'Walk':
-      case 'Run': return PetStatus.PLAYING;
-      case 'Feed': return PetStatus.EATING;
-      case 'Groom': return PetStatus.WAITING;
-      case 'Shake': return PetStatus.SHAKING;
+    const normalizedBehaviour = typeof behaviour === 'string' ? behaviour.trim().toLowerCase() : '';
+    switch(normalizedBehaviour) {
+      case 'rest': return PetStatus.WAITING;
+      case 'sleep': return PetStatus.SLEEPING;
+      case 'walk':
+      case 'run': return PetStatus.PLAYING;
+      case 'feed': return PetStatus.EATING;
+      case 'groom': return PetStatus.GROOMING;
+      case 'shake': return PetStatus.SHAKING;
       default: return null;
     }
   },

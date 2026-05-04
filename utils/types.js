@@ -3,6 +3,7 @@ export const PetStatus = {
   PLAYING: 'Playing',
   EATING: 'Eating',
   WAITING: 'Waiting for you',
+  GROOMING: 'Grooming',
   SHAKING: 'Shaking',
   OBSERVING: 'Observing'
 };

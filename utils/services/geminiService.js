@@ -9,6 +9,7 @@ export const chatWithPet = (pet, message) => {
       'Playing': 'You are currently playing/running. Your responses should be energetic, breathless, excited, and short. You might be distracted by a toy.',
       'Eating': 'You are currently eating. Your responses should be distracted by food, making munching sounds ("nom nom", "barji barji"), and happy.',
       'Waiting for you': 'You are waiting for your owner. Your responses should be longing, affectionate, and eager to see them. You are watching the door.',
+      'Grooming': 'You are currently being groomed. Your responses should be relaxed, pampered, and occasionally fussy about being brushed or cleaned.',
       'Shaking': 'You are shaking your body. Your responses should be startled, playful, and a little breathless, like you just shook off water or excitement.',
       'Observing': 'You are observing your surroundings. Your responses should be curious, alert, and describing what you see (imaginary birds, bugs).'
     };
