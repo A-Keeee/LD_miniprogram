@@ -150,3 +150,91 @@
 .save-btn:active {
   opacity: 0.85;
 }
+
+.pair-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.pair-input {
+  flex: 1;
+}
+
+.pair-btn {
+  flex-shrink: 0;
+  margin: 0 !important;
+  padding: 0 28rpx !important;
+  height: 88rpx !important;
+  line-height: 88rpx !important;
+  background-color: #7e22ce !important;
+  color: #ffffff !important;
+  font-size: 26rpx !important;
+  border-radius: 20rpx !important;
+  border: none !important;
+}
+
+.pair-btn::after {
+  display: none;
+}
+
+.pair-btn[disabled] {
+  opacity: 0.5;
+}
+
+.device-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.device-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 24rpx;
+  border-radius: 20rpx;
+  border: 2rpx solid #e5e7eb;
+  background-color: #ffffff;
+}
+
+.device-item.active {
+  border-color: #a855f7;
+  background-color: #faf5ff;
+}
+
+.device-name {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.device-meta {
+  font-size: 22rpx;
+  color: #9ca3af;
+  margin-top: 6rpx;
+}
+
+.device-actions {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.active-tag {
+  font-size: 22rpx;
+  color: #7e22ce;
+  font-weight: 500;
+}
+
+.unbind-btn {
+  font-size: 22rpx;
+  color: #ef4444;
+}
+
+.empty-devices {
+  font-size: 24rpx;
+  color: #9ca3af;
+  line-height: 1.6;
+  padding: 8rpx 0;
+}

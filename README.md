@@ -1,32 +1,24 @@
-# 🐾 TDesign 小程序 Starter – **宠伴**
+# 🐾 宠伴 – LD 智能宠物小程序
 
-> **一个精美的微信小程序，提供与虚拟宠物的互动，包括实时视频、状态徽章、传感器读数以及 AI 对话功能。**
+> **基于 TDesign Mini-Program 的微信小程序，与 LD 硬件设备联动，提供实时视频、行为状态同步、传感器读数与 AI 对话。**
 
 ---
 
 ## 📖 项目概述
 
-`tdesign-miniprogram-starter` 基于 **TDesign Mini‑Program** 组件实现，演示了 **高级 UI**（玻璃拟态、渐变配色、微交互）以及完整的宠物仪表盘功能：
+`LD_miniprogram` 是 **宠伴智联** 的前端小程序，对接 [`LD_backend`](https://github.com/fourzkw/LD_backend) 后端服务，实现账号登录、设备配对、宠物数字分身与云端行为推理的完整链路。
 
 | 功能 | 说明 |
 |------|------|
-| **实时视频 / 备用视频** | 展示宠物实时视频，若解码失败自动回退远程视频。 |
-| **状态徽章** | 根据宠物当前状态（等待、睡觉、玩耍、吃饭、梳理、抖动身体）显示对应 Emoji。 |
-| **传感器框** | 电池 % 与温度 ℃ 的实时读数，使用 TDesign 图标。 |
-| **控制按钮** | 心形（震动反馈）与聊天按钮。 |
-| **聊天弹层** | 基于 Gemini 的 AI 对话，支持发送/接收消息。 |
-| **云端实时同步** | 可选 HTTP 轮询 `LD_backend` 的 `/api/pet/status`，同步 IMU 推理状态。 |
-| **主题** | 暗色玻璃拟态风格，渐变高光，流畅的点击/滑动动画。 |
-
----
-
-## 🎨 截图
-
-> 请将实际页面截图替换以下占位图。
-
-```markdown
-![首页示例](https://via.placeholder.com/800x450?text=Home+Page+Mockup)
-```
+| **账号体系** | 手机号 + 密码注册/登录，Token 鉴权访问后端 API。 |
+| **设备配对** | 输入 6 位配对码，上传宠物照片并创建数字分身，支持多设备绑定与切换。 |
+| **状态视频** | 优先播放后端 AI 生成视频，回退至本地预置视频；支持批量生成各状态视频。 |
+| **云端同步** | 轮询 `GET /api/pet/status`，将 IMU 推理 `behaviour` 映射为宠物状态并刷新 UI。 |
+| **状态徽章** | 根据当前状态（等待、睡觉、行走、吃饭、梳理、抖动身体）显示 Emoji 与标签。 |
+| **传感器框** | 电池 % 与温度 ℃ 的实时读数展示。 |
+| **AI 聊天** | 基于 Gemini 的宠物对话弹层，支持发送/接收消息。 |
+| **宠圈** | 社交动态页（当前为静态演示数据）。 |
+| **主题** | 暗色玻璃拟态风格，渐变高光与流畅微交互。 |
 
 ---
 
@@ -34,35 +26,43 @@
 
 ### 前置条件
 
-1. **Node ≥ 14**（用于 npm）
+1. **Node ≥ 14**（用于 npm 依赖安装）
 2. **微信开发者工具**（最新版）
+3. **LD_backend** 已启动（默认 `http://127.0.0.1:5000`）
 
 ### 安装步骤
 
 ```bash
 # 克隆仓库
-git clone https://github.com/TDesignOteam/tdesign-miniprogram-starter.git
-cd tdesign-miniprogram-starter
+git clone https://github.com/fourzkw/LD_miniprogram.git
+cd LD_miniprogram
 
 # 安装依赖
 npm install
 
-# 在微信开发者工具中打开项目（File → Open → 选择本文件夹）
+# 在微信开发者工具中打开项目（文件 → 打开 → 选择本文件夹）
 ```
+
+### 后端配置
+
+在 `config/index.js` 中修改 `localBackendBaseUrl`：
+
+```js
+export const cloudConfig = {
+  localBackendBaseUrl: 'http://127.0.0.1:5000',  // 真机预览改为电脑局域网 IP
+  statusPollIntervalMs: 1500,
+};
+```
+
+- 开发阶段请在微信开发者工具中勾选 **「不校验合法域名、web-view、TLS 版本以及 HTTPS 证书」**。
+- 真机预览时，将 `127.0.0.1` 替换为电脑的局域网 IP（如 `http://192.168.x.x:5000`）。
+- `config.useMock` 默认为 `false`，关闭后所有请求走真实后端；设为 `true` 可启用本地 mock 拦截。
 
 ### 本地运行
 
-1. 打开 **微信开发者工具**，点击 **“编译” → “预览”**。
-2. 小程序将在模拟器或真实设备（扫码）上启动。
-
-### 打包发布
-
-```bash
-# 如有自定义构建脚本，可执行
-npm run build
-```
-
-在 **微信开发者工具** 中选择 **“上传”**，填写版本号和说明即可。
+1. 启动 **LD_backend** 服务。
+2. 打开 **微信开发者工具**，点击 **「编译」→「预览」**。
+3. 首次使用：注册账号 → 在 **设置** 页输入配对码并创建宠物 → 返回 **陪伴** 页查看仪表盘。
 
 ---
 
@@ -71,86 +71,128 @@ npm run build
 ### 项目结构
 
 ```
-├─ app.js                # 全局入口，初始化 globalData
-├─ app.json              # 小程序配置（页面、tabBar、组件）
-├─ app.less              # 全局 LESS 变量 & 主题
+├─ app.js / app.json / app.less   # 全局入口与配置
+├─ config/
+│   ├─ index.js                   # useMock、后端地址、轮询间隔
+│   └─ config.js                  # request 层使用的 baseUrl 封装
+├─ api/request.js                 # 统一 HTTP 请求（自动附加 Bearer Token）
 ├─ pages/
-│   ├─ home/            # ★ 主仪表盘（index.wxml、.wxss、.js）
-│   ├─ social/          # 预留的社交页
-│   ├─ setting/         # 设置页（目前为空）
-│   └─ setup/           # 首次运行向导，用于创建宠物资料
-├─ components/           # 可复用的 TDesign 组件（如有）
+│   ├─ login/                     # 登录页
+│   ├─ register/                  # 注册页
+│   ├─ home/                      # ★ 主仪表盘（视频、状态、聊天、云端同步）
+│   ├─ social/                    # 宠圈（演示数据）
+│   └─ setting/                   # 设备配对、视频提供商设置
+├─ custom-tab-bar/                # 自定义底部导航（陪伴 / 宠圈 / 设置）
+├─ components/                    # 可复用组件（nav、card 等）
 ├─ utils/
-│   ├─ types.js         # 枚举定义（PetStatus）
+│   ├─ types.js                   # PetStatus、VideoProvider 枚举
 │   └─ services/
-│        ├─ videoService.js   # 视频 URL 解析 & 远端 fallback
-│        └─ geminiService.js  # 与 Gemini 对话的封装
-├─ config/index.js       # 后端地址与云端同步轮询间隔
-└─ README.md             # 本文档
+│        ├─ deviceService.js     # 设备注册、配对、切换、解绑
+│        ├─ videoService.js      # 视频解析、AI 任务、本地缓存
+│        └─ geminiService.js     # Gemini AI 对话封装
+├─ mock/                          # 可选 mock 数据（useMock: true 时生效）
+└─ static/video/                  # 本地预置状态视频（回退用）
 ```
 
-### 关键代码文件
+### 页面路由
 
-- **pages/home/index.js**：页面核心逻辑，负责视频加载、状态映射、云端同步轮询、聊天流程。
-- **pages/home/index.wxml**：使用 TDesign 组件 (`t-icon`, `t-toast`) 布局页面 UI。
-- **pages/home/index.wxss**：局部样式，实现玻璃拟态、渐变、响应式布局。
-- **utils/services/videoService.js**：`getPetStatusVideo(pet, settings)` 获取对应视频 URL；`getRemoteFallback(pet)` 远端图片回退。
-- **utils/services/geminiService.js**：封装 Gemini API，`chatWithPet(pet, userMsg)` 返回 AI 回复。
+| 页面 | 路径 | 说明 |
+|------|------|------|
+| 登录 | `pages/login/login` | 入口页，未登录自动跳转 |
+| 注册 | `pages/register/register` | 手机号注册 |
+| 陪伴 | `pages/home/index` | Tab 首页，需已绑定设备 |
+| 宠圈 | `pages/social/index` | Tab 社交页 |
+| 设置 | `pages/setting/index` | Tab 设置页，设备管理与视频配置 |
 
-### 添加新页面的步骤
+### 关键服务
 
-1. 在 `pages/` 下新建目录（例如 `pages/profile/`），并创建 `index.wxml、index.wxss、index.js`。
-2. 在 `app.json` 的 `pages` 数组中加入路径：`"pages/profile/index"`。
-3. 若使用自定义组件，记得在 `usingComponents` 中注册。
+- **`utils/services/deviceService.js`**：`pairDevice`、`listDevices`、`setActiveDevice`、`unbindDevice` 等设备生命周期管理。
+- **`utils/services/videoService.js`**：`resolveStatusVideoUrl` 按「本地 AI 缓存 → 后端任务 → 预置视频」策略解析可播放 URL；`createStatusVideoTask` 触发 AI 视频生成。
+- **`pages/home/index.js`**：视频加载、云端同步轮询、多宠物切换、聊天流程的核心逻辑。
+
+### 添加新页面
+
+1. 在 `pages/` 下新建目录，创建 `index.wxml`、`index.wxss`、`index.js`、`index.json`。
+2. 在 `app.json` 的 `pages` 数组中加入路径。
+3. 若使用 TDesign 组件，在页面或全局 `usingComponents` 中注册。
 
 ---
 
 ## 📦 功能细节
 
-### 1. 实时视频 & 退化机制
+### 1. 设备配对流程
+
+1. 在 LD_backend / 硬件侧获取 6 位配对码。
+2. 进入 **设置** 页，填写配对码、宠物昵称、类型（猫/狗）并上传照片。
+3. 调用 `POST /api/devices/pair`，成功后自动设为当前活跃设备并同步 `petProfile`。
+4. 可在设备列表中切换活跃宠物或解绑设备。
+
+### 2. 状态视频解析策略
+
 ```js
-// pages/home/index.js → loadVideo()
-const url = await getPetStatusVideo(pet, settings);
+// utils/services/videoService.js → resolveStatusVideoUrl()
+// 1. 本地 AI 生成缓存（按账号 + 状态）
+// 2. GET /api/video/tasks/<state> 查询后端任务状态
+// 3. 可选回退至 static/video/ 预置视频
 ```
-- 若本地解码失败，`handleVideoError()` 会尝试一次远端视频回退，随后永久关闭视频播放以防无限重试。
-- 本地视频文件会先从小程序包复制到用户目录，再作为 `<video>` 的可播放 `src` 使用。
 
-#### 行为识别结果与视频对应关系
+#### 行为识别与视频对应关系
 
-云端推理服务返回的 `behaviour` 会先在 `pages/home/index.js` 中映射为 `PetStatus`，再由 `utils/services/videoService.js` 选择对应视频文件：
+云端推理返回的 `behaviour` 在 `pages/home/index.js` 中映射为 `PetStatus`：
 
-| 推理结果 behaviour | 宠物状态 PetStatus | 展示视频 | 视频文件 |
-|-------------------|--------------------|----------|----------|
-| `Rest` | `PetStatus.WAITING` | 等待视频 | `static/video/waiting.mp4` |
-| `Sleep` | `PetStatus.SLEEPING` | 睡觉视频 | `static/video/sleeping.mp4` |
-| `Walk` / `Run` | `PetStatus.WALKING` | 行走视频 | `static/video/walking.mp4` |
-| `Feed` | `PetStatus.EATING` | 吃饭视频 | `static/video/eating.mp4` |
-| `Groom` | `PetStatus.GROOMING` | 梳理视频 | `static/video/grooming.mp4` |
-| `Shake` | `PetStatus.SHAKING` | 抖动视频 | `static/video/shaking.mp4` |
+| 推理结果 behaviour | 宠物状态 PetStatus | 预置视频文件 |
+|-------------------|--------------------|--------------|
+| `Rest` | `PetStatus.WAITING` | `static/video/waiting.mp4` |
+| `Sleep` | `PetStatus.SLEEPING` | `static/video/sleeping.mp4` |
+| `Walk` / `Run` | `PetStatus.WALKING` | `static/video/walking.mp4` |
+| `Feed` | `PetStatus.EATING` | `static/video/eating.mp4` |
+| `Groom` | `PetStatus.GROOMING` | `static/video/grooming.mp4` |
+| `Shake` | `PetStatus.SHAKING` | `static/video/shaking.mp4` |
 
-### 2. 云端实时同步（HTTP 轮询）
+> 微信 `<video>` 组件不支持直接播放包内路径，预置视频会先复制到用户目录再作为 `src` 使用。
 
-在首页开启「云端同步」后，小程序会定期请求 `GET /api/pet/status`（地址见 `config/index.js` 的 `localBackendBaseUrl`），将返回的 `behaviour` 映射为 `PetStatus` 并刷新 UI。
+### 3. 云端实时同步
 
-### 3. AI 聊天（Gemini）
+开启首页「云端同步」开关后，按 `statusPollIntervalMs` 间隔请求：
+
+```
+GET /api/pet/status?device_id=<active_device_id>
+```
+
+需已登录且绑定设备；返回的 `behaviour` 会驱动状态徽章与视频切换。
+
+### 4. AI 聊天（Gemini）
+
 ```js
 import { chatWithPet } from '../../utils/services/geminiService.js';
 const reply = await chatWithPet(pet, userMsg);
 ```
-- 网络异常时会在聊天记录中显示 `喵? (连接断开...)`。
 
-### 4. 轻触反馈
-```js
-wx.vibrateShort({ type: 'medium' }); // 心形按钮点击时触发
-```
+网络异常时会在聊天记录中显示 `喵? (连接断开...)`。
+
+### 5. 视频提供商设置
+
+在 **设置** 页可配置 `VideoProvider`：
+
+- **LOCAL**：使用预置/后端已生成视频。
+- **KLING_AI**：AI 短视频生成（接口预留，需配置 API Key）。
 
 ---
 
 ## 🧩 扩展指南
 
-- **新增状态**：在 `utils/types.js` 中扩展 `PetStatus` 枚举，并在 `statusConfig` 中添加对应的 `label` 与 `icon`。
-- **自定义组件**：将可复用的 UI 放入 `components/`，并在页面的 `usingComponents` 中声明。
-- **后端对接**：在 `config/index.js` 中配置 `localBackendBaseUrl` 指向 `LD_backend`。
+- **新增宠物状态**：在 `utils/types.js` 扩展 `PetStatus`，同步更新 `pages/home/index.js` 的 `statusConfig` 与 `static/video/` 预置文件。
+- **对接新后端**：修改 `config/index.js` 中的 `localBackendBaseUrl`。
+- **启用 Mock**：将 `config.useMock` 设为 `true`，请求将由 `mock/` 目录拦截。
+
+---
+
+## 📜 常用脚本
+
+```bash
+npm run lint          # ESLint 检查
+npm run lint:fix      # 自动修复 ESLint + Prettier
+```
 
 ---
 
@@ -166,13 +208,6 @@ wx.vibrateShort({ type: 'medium' }); // 心形按钮点击时触发
 2. 创建功能分支：`git checkout -b feat/awesome-feature`。
 3. 执行 `npm run lint` 确保代码无报错。
 4. 提交 Pull Request 并填写清晰的描述。
-
----
-
-## 🛎️ 联系方式
-
-- 在 GitHub 提交 **Issue**。
-- 加入 **官方 TDesign 小程序交流群**（搜索 “TDesign Mini‑Program”）。
 
 ---
 

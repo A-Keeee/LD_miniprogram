@@ -1,6 +1,91 @@
 <view class="container">
   <view class="card">
     <view class="card-header">
+      <t-icon name="link" size="20px" color="#7e22ce" />
+      <text class="card-title">我的设备</text>
+    </view>
+
+    <view class="form-group">
+      <view class="label">配对码</view>
+      <view class="pair-row">
+        <input
+          class="input-box no-icon pair-input"
+          placeholder="输入 6 位配对码"
+          maxlength="6"
+          value="{{pairingCode}}"
+          bindinput="onPairingCodeInput"
+        />
+        <button
+          class="pair-btn"
+          bindtap="handlePair"
+          disabled="{{isPairing || !pairingCode || !petName || !petImageDataUrl}}"
+          loading="{{isPairing}}"
+        >配对</button>
+      </view>
+    </view>
+
+    <view class="form-group">
+      <view class="label">宠物昵称</view>
+      <input
+        class="input-box no-icon"
+        placeholder="例如：糯米"
+        value="{{petName}}"
+        bindinput="onPetNameInput"
+      />
+    </view>
+
+    <view class="type-selector">
+      <view class="type-btn {{petType === 'cat' ? 'active' : ''}}" data-type="cat" bindtap="selectPetType">
+        <text class="emoji">🐱</text>
+        <text>猫咪</text>
+      </view>
+      <view class="type-btn {{petType === 'dog' ? 'active' : ''}}" data-type="dog" bindtap="selectPetType">
+        <text class="emoji">🐶</text>
+        <text>狗狗</text>
+      </view>
+    </view>
+
+    <view class="form-group">
+      <view class="label">宠物照片（用于生成数字分身）</view>
+      <view class="upload-area" bindtap="choosePetImage">
+        <image wx:if="{{petImage}}" src="{{petImage}}" mode="aspectFill" class="preview-img"></image>
+        <view wx:else class="upload-placeholder">
+          <t-icon name="upload" size="32px" color="#9ca3af" />
+          <text>点击上传照片</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="device-list" wx:if="{{devices.length > 0}}">
+      <view
+        wx:for="{{devices}}"
+        wx:key="device_id"
+        class="device-item {{activeDeviceId === item.device_id ? 'active' : ''}}"
+        data-id="{{item.device_id}}"
+        bindtap="handleSelectDevice"
+      >
+        <view class="device-main">
+          <view class="device-name">{{item.pet_name || item.name || item.device_id}}</view>
+          <view class="device-meta">{{item.device_id}} · 最后在线 {{item.lastSeenText}}</view>
+        </view>
+        <view class="device-actions">
+          <text wx:if="{{activeDeviceId === item.device_id}}" class="active-tag">当前</text>
+          <text
+            class="unbind-btn"
+            data-id="{{item.device_id}}"
+            catchtap="handleUnbind"
+          >解绑</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty-devices" wx:elif="{{!isLoadingDevices}}">
+      暂无绑定设备，请先注册硬件/Mock 设备，输入配对码并创建宠物
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-header">
       <t-icon name="server" size="20px" color="#7e22ce" />
       <text class="card-title">视频内容设置</text>
     </view>

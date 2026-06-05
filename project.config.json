@@ -65,30 +65,6 @@
           "scene": null
         },
         {
-          "name": "loginCode",
-          "pathName": "pages/loginCode/loginCode",
-          "query": "",
-          "scene": null
-        },
-        {
-          "name": "my",
-          "pathName": "pages/my/index",
-          "query": "",
-          "scene": null
-        },
-        {
-          "name": "info-edit",
-          "pathName": "pages/my/info-edit/index",
-          "query": "",
-          "scene": null
-        },
-        {
-          "name": "dataCenter",
-          "pathName": "pages/dataCenter/index",
-          "query": "",
-          "scene": null
-        },
-        {
           "name": "release",
           "pathName": "pages/release/index",
           "query": "",

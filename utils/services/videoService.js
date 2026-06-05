@@ -1,6 +1,7 @@
 import { PetStatus, VideoProvider } from '../types.js';
 import request from '../../api/request';
 import appConfig from '../../config/index.js';
+import { getActiveDeviceId } from './deviceService.js';
 
 // WeChat <video> component requires network URLs or temp file paths from wx APIs
 // Local package paths like /static/video/xxx.mp4 are NOT supported
@@ -203,14 +204,15 @@ const getAuthDownloadHeader = () => {
   return header;
 };
 
-const getBackendVideoFileUrl = (state) => {
+const getBackendVideoFileUrl = (state, deviceId) => {
   const base = (appConfig.cloudConfig.localBackendBaseUrl || '').replace(/\/$/, '');
   const s = encodeURIComponent(String(state || '').trim());
-  return `${base}/api/video/tasks/${s}/file`;
+  const d = encodeURIComponent(String(deviceId || getActiveDeviceId() || '').trim());
+  return `${base}/api/video/tasks/${s}/file?device_id=${d}`;
 };
 
-export const getBackendVideoStreamUrl = (state) => {
-  const url = getBackendVideoFileUrl(state);
+export const getBackendVideoStreamUrl = (state, deviceId) => {
+  const url = getBackendVideoFileUrl(state, deviceId);
   const token = getAccessToken();
   if (!token) {
     return url;
@@ -383,17 +385,27 @@ export const createStatusVideoTask = async (state, options = {}) => {
     throw new Error('missing_state');
   }
   const force = Boolean(options && options.force);
-  // Backend-fixed prompt: mini program must NOT send prompt.
-  const res = await request('/api/video/tasks', 'post', { state: s, force });
+  const deviceId = (options && options.deviceId) || getActiveDeviceId();
+  if (!deviceId) {
+    throw new Error('missing_device_id');
+  }
+  const res = await request('/api/video/tasks', 'post', { state: s, force, device_id: deviceId });
   return res.data;
 };
 
-export const getStatusVideoTask = async (state) => {
+export const getStatusVideoTask = async (state, deviceId) => {
   const s = String(state || '').trim();
   if (!s) {
     throw new Error('missing_state');
   }
-  const res = await request(`/api/video/tasks/${encodeURIComponent(s)}`, 'get');
+  const id = deviceId || getActiveDeviceId();
+  if (!id) {
+    throw new Error('missing_device_id');
+  }
+  const res = await request(
+    `/api/video/tasks/${encodeURIComponent(s)}?device_id=${encodeURIComponent(id)}`,
+    'get'
+  );
   return res.data;
 };
 
