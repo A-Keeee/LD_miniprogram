@@ -15,7 +15,7 @@
 | **传感器框** | 电池 % 与温度 ℃ 的实时读数，使用 TDesign 图标。 |
 | **控制按钮** | 心形（震动反馈）与聊天按钮。 |
 | **聊天弹层** | 基于 Gemini 的 AI 对话，支持发送/接收消息。 |
-| **云端实时同步** | 可选 WebSocket (`ws://8.156.34.152:4535`) 推送远端推理结果并同步状态。 |
+| **云端实时同步** | 可选 HTTP 轮询 `LD_backend` 的 `/api/pet/status`，同步 IMU 推理状态。 |
 | **主题** | 暗色玻璃拟态风格，渐变高光，流畅的点击/滑动动画。 |
 
 ---
@@ -36,7 +36,6 @@
 
 1. **Node ≥ 14**（用于 npm）
 2. **微信开发者工具**（最新版）
-3. 可选：**Python 3.9+**（仅用于 `wx_test_sub.py` 测试脚本）
 
 ### 安装步骤
 
@@ -86,13 +85,13 @@ npm run build
 │   └─ services/
 │        ├─ videoService.js   # 视频 URL 解析 & 远端 fallback
 │        └─ geminiService.js  # 与 Gemini 对话的封装
-├─ wx_test_sub.py        # 本地调试脚本示例（非必须）
+├─ config/index.js       # 后端地址与云端同步轮询间隔
 └─ README.md             # 本文档
 ```
 
 ### 关键代码文件
 
-- **pages/home/index.js**：页面核心逻辑，负责视频加载、状态映射、WebSocket 处理、聊天流程。
+- **pages/home/index.js**：页面核心逻辑，负责视频加载、状态映射、云端同步轮询、聊天流程。
 - **pages/home/index.wxml**：使用 TDesign 组件 (`t-icon`, `t-toast`) 布局页面 UI。
 - **pages/home/index.wxss**：局部样式，实现玻璃拟态、渐变、响应式布局。
 - **utils/services/videoService.js**：`getPetStatusVideo(pet, settings)` 获取对应视频 URL；`getRemoteFallback(pet)` 远端图片回退。
@@ -124,16 +123,14 @@ const url = await getPetStatusVideo(pet, settings);
 |-------------------|--------------------|----------|----------|
 | `Rest` | `PetStatus.WAITING` | 等待视频 | `static/video/waiting.mp4` |
 | `Sleep` | `PetStatus.SLEEPING` | 睡觉视频 | `static/video/sleeping.mp4` |
-| `Walk` / `Run` | `PetStatus.PLAYING` | 玩耍视频 | `static/video/playing.mp4` |
+| `Walk` / `Run` | `PetStatus.WALKING` | 行走视频 | `static/video/walking.mp4` |
 | `Feed` | `PetStatus.EATING` | 吃饭视频 | `static/video/eating.mp4` |
 | `Groom` | `PetStatus.GROOMING` | 梳理视频 | `static/video/grooming.mp4` |
 | `Shake` | `PetStatus.SHAKING` | 抖动视频 | `static/video/shaking.mp4` |
 
-### 2. 云端实时同步（WebSocket）
-```js
-wx.connectSocket({ url: 'ws://8.156.34.152:4535' });
-```
-- 收到 `{type: 'inference_result', behaviour: 'Walk'}` 后映射为 `PetStatus.PLAYING` 并刷新 UI。
+### 2. 云端实时同步（HTTP 轮询）
+
+在首页开启「云端同步」后，小程序会定期请求 `GET /api/pet/status`（地址见 `config/index.js` 的 `localBackendBaseUrl`），将返回的 `behaviour` 映射为 `PetStatus` 并刷新 UI。
 
 ### 3. AI 聊天（Gemini）
 ```js
@@ -153,7 +150,7 @@ wx.vibrateShort({ type: 'medium' }); // 心形按钮点击时触发
 
 - **新增状态**：在 `utils/types.js` 中扩展 `PetStatus` 枚举，并在 `statusConfig` 中添加对应的 `label` 与 `icon`。
 - **自定义组件**：将可复用的 UI 放入 `components/`，并在页面的 `usingComponents` 中声明。
-- **后端对接**：将演示的 WebSocket 地址替换为自己的推理服务端点。
+- **后端对接**：在 `config/index.js` 中配置 `localBackendBaseUrl` 指向 `LD_backend`。
 
 ---
 

@@ -1,4 +1,5 @@
 import request from '~/api/request';
+import { setCurrentAccountPhone } from '../../utils/services/videoService.js';
 
 Page({
   data: {
@@ -45,6 +46,7 @@ Page({
     const res = await request('/login/postCodeVerify', 'get', { code: this.data.verifyCode });
     if (res.success) {
       await wx.setStorageSync('access_token', res.data.token);
+      setCurrentAccountPhone(this.data.phoneNumber);
       wx.switchTab({
         url: `/pages/my/index`,
       });

@@ -1,5 +1,5 @@
 // app.js
-import { getInitialVideoSettings } from './utils/services/videoService.js';
+import { getInitialVideoSettings, setCurrentAccountPhone } from './utils/services/videoService.js';
 
 App({
   onLaunch() {
@@ -12,6 +12,15 @@ App({
   },
 
   initPetData() {
+    try {
+      const phone = wx.getStorageSync('user_phone');
+      if (phone) {
+        setCurrentAccountPhone(phone);
+      }
+    } catch (e) {
+      console.warn('Failed to restore account phone:', e);
+    }
+
     // Load pet profile from storage
     try {
       const petStr = wx.getStorageSync('pet_profile');

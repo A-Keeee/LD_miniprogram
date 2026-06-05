@@ -6,7 +6,7 @@ export const chatWithPet = (pet, message) => {
     // Define specific behaviors based on status
     const statusBehaviors = {
       'Sleeping': 'You are currently sleeping. Your responses should be drowsy, dream-like, or slightly annoyed at being woken up. Use "Zzz" or yawning sounds.',
-      'Playing': 'You are currently playing/running. Your responses should be energetic, breathless, excited, and short. You might be distracted by a toy.',
+      'Walking': 'You are currently walking. Your responses should be calm but attentive, with a steady pace. You might notice things along the path.',
       'Eating': 'You are currently eating. Your responses should be distracted by food, making munching sounds ("nom nom", "barji barji"), and happy.',
       'Waiting for you': 'You are waiting for your owner. Your responses should be longing, affectionate, and eager to see them. You are watching the door.',
       'Grooming': 'You are currently being groomed. Your responses should be relaxed, pampered, and occasionally fussy about being brushed or cleaned.',

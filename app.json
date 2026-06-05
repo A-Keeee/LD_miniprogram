@@ -1,9 +1,10 @@
 {
   "pages": [
+    "pages/login/login",
+    "pages/register/register",
     "pages/home/index",
     "pages/social/index",
-    "pages/setting/index",
-    "pages/setup/index"
+    "pages/setting/index"
   ],
   "usingComponents": {
     "t-toast": "tdesign-miniprogram/toast/toast",

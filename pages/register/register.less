@@ -1,0 +1,188 @@
+/* Shared onboarding form styles (formerly pages/setup) */
+.container {
+  min-height: 100vh;
+  background-color: #fdfbf7;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.icon-wrap {
+  width: 64px;
+  height: 64px;
+  background-color: #f3e8ff;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.input-text {
+  width: 100%;
+  height: 48px;
+  line-height: 48px;
+  box-sizing: border-box;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.type-selector {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.type-btn {
+  flex: 1;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #6b7280;
+}
+
+.type-btn.active {
+  border-color: #a855f7;
+  background-color: #faf5ff;
+  color: #7e22ce;
+}
+
+.emoji {
+  font-size: 24px;
+}
+
+.upload-area {
+  width: 100%;
+  height: 192px;
+  border-radius: 12px;
+  border: 2px dashed #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  overflow: hidden;
+}
+
+.preview-img {
+  width: 100%;
+  height: 100%;
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #6b7280;
+  font-size: 14px;
+  gap: 8px;
+}
+
+.submit-btn {
+  width: 100%;
+  background-color: #111827;
+  color: #ffffff;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  margin-top: 16px;
+}
+
+.submit-btn[disabled] {
+  background-color: #9ca3af;
+  color: #f3f4f6;
+  opacity: 0.7;
+}
+
+.auth-page.container {
+  padding: calc(40px + env(safe-area-inset-top)) 24px 40px;
+  padding: calc(40px + constant(safe-area-inset-top)) 24px 40px;
+}
+
+.nav-back {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 8px;
+  align-self: flex-start;
+}
+
+.agree-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.agree-box {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.agree-box--on {
+  border-color: #a855f7;
+  background-color: #faf5ff;
+}
+
+.agree-check {
+  font-size: 12px;
+  color: #7e22ce;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.agree-text {
+  font-size: 14px;
+  color: #374151;
+}
+
+.auth-footer-link {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #9333ea;
+  text-align: center;
+}

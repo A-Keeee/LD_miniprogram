@@ -67,49 +67,6 @@ function addNewMessage(userId, from, content) {
   return message;
 }
 
-/** 模拟SocketTask */
-class MockSocketTask {
-  constructor(url) {
-    this.url = url;
-    this.onopen = () => {};
-    this.onmessage = () => {};
-    this.onclose = () => {};
-    delay(1000).then(() => {
-      this.onopen();
-    });
-  }
-
-  onOpen(callback) {
-    if (typeof callback === 'function') this.onopen = callback;
-  }
-
-  onMessage(callback) {
-    if (typeof callback === 'function') this.onmessage = callback;
-  }
-
-  send(data) {
-    data = JSON.parse(data);
-    if (data.type === 'message') {
-      const { userId, content } = data.data;
-      delay().then(() => {
-        const message = addNewMessage(userId, 0, content);
-        this.onmessage(JSON.stringify({ type: 'message', data: { userId, message } }));
-      });
-      // 模拟3秒后对方回复消息
-      delay(3000).then(() => {
-        const message = addNewMessage(userId, 1, ['收到', '好的', '知道了', '👌OK'].at(Math.floor(Math.random() * 4)));
-        this.onmessage(JSON.stringify({ type: 'message', data: { userId, message } }));
-      });
-    }
-  }
-}
-
-/** 连接WebSocket，返回SocketTask对象 */
-export function connectSocket() {
-  // return wx.connectSocket({ url: 'url' })
-  return new MockSocketTask('ws://localhost:8080');
-}
-
 /** 获取未读消息数量 */
 export function fetchUnreadNum() {
   let unreadNum = 0;

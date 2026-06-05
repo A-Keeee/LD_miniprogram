@@ -24,14 +24,15 @@
   <view class="visual-area" wx:if="{{pet}}">
     <view class="video-container">
       <view class="live-indicator">
-        <view class="live-dot {{(videoError || videoDisabled) ? 'offline' : ''}}"></view>
-        <text>{{(videoError || videoDisabled) ? 'PREVIEW' : 'LIVE'}}</text>
+        <view class="live-dot {{(videoError || videoDisabled || !videoSrc) ? 'offline' : ''}}"></view>
+        <text>{{(videoError || videoDisabled || !videoSrc) ? 'PREVIEW' : 'LIVE'}}</text>
       </view>
 
       <!-- Only show video component if video is NOT disabled -->
       <video 
         wx:if="{{videoSrc && !videoError && !videoDisabled}}"
         src="{{videoSrc}}"
+        http-header="{{videoHttpHeader}}"
         class="video-player"
         autoplay
         loop
@@ -53,8 +54,19 @@
           mode="aspectFill"
           class="fallback-img"
         ></image>
+        <view class="video-waiting-mask" wx:if="{{videoUnavailableReason}}">
+          <view class="video-waiting-inner">
+            <view class="video-waiting-title">{{isVideoCreating ? '创作中' : '等待创作'}}</view>
+            <button
+              class="create-video-btn"
+              bindtap="handleCreateVideo"
+              disabled="{{isVideoCreating || isBatchVideoCreating}}"
+              loading="{{isVideoCreating && !isBatchVideoCreating}}"
+            >{{isVideoCreating && !isBatchVideoCreating ? '创作中' : '创作'}}</button>
+          </view>
+        </view>
         <!-- Animated status emoji overlay -->
-        <view class="status-emoji-overlay">
+        <view class="status-emoji-overlay" wx:if="{{!videoUnavailableReason}}">
           <text class="status-emoji-big">{{statusConfig[pet.currentStatus].icon}}</text>
         </view>
         <!-- Platform notice (only show once when video is disabled) -->
@@ -64,7 +76,7 @@
       </view>
 
       <!-- Controls overlays -->
-      <view class="controls">
+      <view class="controls" wx:if="{{!videoUnavailableReason}}">
         <view class="control-btn" bindtap="triggerHaptic">
           <t-icon name="heart" size="24px" color="#ec4899" />
         </view>
@@ -72,13 +84,30 @@
           <t-icon name="chat" size="24px" color="#9333ea" />
         </view>
       </view>
+
     </view>
   </view>
 
   <!-- Status Selectors -->
   <view class="status-buttons-area" wx:if="{{pet}}">
     <view class="section-title-flex">
-      <view class="section-title">当前状态</view>
+      <view class="section-title-group">
+        <view class="section-title">当前状态</view>
+        <view class="status-create-actions">
+          <button
+            class="status-create-btn"
+            bindtap="handleRecreateVideo"
+            disabled="{{isVideoCreating || isBatchVideoCreating}}"
+            loading="{{isVideoCreating && !isBatchVideoCreating}}"
+          >{{isVideoCreating && !isBatchVideoCreating ? '创作中' : '重新创作'}}</button>
+          <button
+            class="status-create-btn status-create-btn-outline"
+            bindtap="handleCreateAllVideos"
+            disabled="{{isVideoCreating || isBatchVideoCreating}}"
+            loading="{{isBatchVideoCreating}}"
+          >{{isBatchVideoCreating ? '提交中' : '全部创作'}}</button>
+        </view>
+      </view>
       <view class="live-sync-switch">
         <text>云端同步</text>
         <switch checked="{{isLiveSync}}" bindchange="onLiveSyncChange" color="#a855f7" style="transform: scale(0.7); margin-right: -16rpx;" />
@@ -87,7 +116,7 @@
     <view class="grid-4">
       <block wx:for="{{statusList}}" wx:key="*this">
         <view 
-          class="status-btn {{pet.currentStatus === item ? 'active' : ''}}"
+          class="status-btn {{pet.currentStatus === item ? 'active' : ''}} {{isLiveSync ? 'status-sync-locked' : ''}}"
           data-status="{{item}}"
           bindtap="handleStatusChange"
         >
