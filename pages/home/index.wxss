@@ -53,6 +53,71 @@
   gap: 12rpx;
 }
 
+/* ========== Pet Picker ========== */
+.pet-picker {
+  width: 100%;
+  white-space: nowrap;
+  margin-top: 8rpx;
+}
+
+.pet-picker-inner {
+  display: inline-flex;
+  gap: 16rpx;
+  padding: 8rpx 32rpx 16rpx;
+}
+
+.pet-picker-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  min-width: 112rpx;
+  padding: 12rpx 16rpx 10rpx;
+  border-radius: 24rpx;
+  border: 2rpx solid transparent;
+  background-color: #ffffff;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.pet-picker-item.active {
+  border-color: #a855f7;
+  background-color: #faf5ff;
+  box-shadow: 0 4rpx 12rpx rgba(168, 85, 247, 0.12);
+}
+
+.pet-picker-avatar {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  border: 3rpx solid #f3f4f6;
+}
+
+.pet-picker-item.active .pet-picker-avatar {
+  border-color: #d8b4fe;
+}
+
+.pet-picker-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f9fafb;
+  font-size: 36rpx;
+}
+
+.pet-picker-name {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #6b7280;
+  max-width: 120rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pet-picker-item.active .pet-picker-name {
+  color: #7e22ce;
+}
+
 .sensor-box {
   display: flex;
   align-items: center;
@@ -330,6 +395,25 @@
   font-size: 22rpx;
   font-weight: bold;
   color: #6b7280;
+}
+
+.live-sync-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4rpx;
+}
+
+.live-sync-device {
+  font-size: 20rpx;
+  color: #7e22ce;
+  font-weight: 500;
+}
+
+.live-sync-hint {
+  font-size: 20rpx;
+  color: #ef4444;
+  font-weight: 500;
 }
 
 .status-btn.status-sync-locked {

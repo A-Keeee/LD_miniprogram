@@ -20,6 +20,36 @@
     </view>
   </view>
 
+  <!-- Pet picker (multiple devices) -->
+  <scroll-view
+    wx:if="{{devices.length > 1}}"
+    class="pet-picker"
+    scroll-x
+    enhanced
+    show-scrollbar="{{false}}"
+  >
+    <view class="pet-picker-inner">
+      <view
+        wx:for="{{devices}}"
+        wx:key="device_id"
+        class="pet-picker-item {{item.device_id === activeDeviceId ? 'active' : ''}}"
+        data-id="{{item.device_id}}"
+        bindtap="handleSelectPet"
+      >
+        <image
+          wx:if="{{item.thumb}}"
+          src="{{item.thumb}}"
+          class="pet-picker-avatar"
+          mode="aspectFill"
+        ></image>
+        <view wx:else class="pet-picker-avatar pet-picker-placeholder">
+          <text>{{item.petType === 'dog' ? '🐶' : '🐱'}}</text>
+        </view>
+        <text class="pet-picker-name">{{item.displayName}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
   <!-- Video / Image Display Area -->
   <view class="visual-area" wx:if="{{pet}}">
     <view class="video-container">
@@ -109,7 +139,11 @@
         </view>
       </view>
       <view class="live-sync-switch">
-        <text>云端同步</text>
+        <view class="live-sync-meta">
+          <text>云端同步</text>
+          <text class="live-sync-device" wx:if="{{activeDeviceName}}">{{activeDeviceName}}</text>
+          <text class="live-sync-hint" wx:if="{{liveSyncHint}}">{{liveSyncHint}}</text>
+        </view>
         <switch checked="{{isLiveSync}}" bindchange="onLiveSyncChange" color="#a855f7" style="transform: scale(0.7); margin-right: -16rpx;" />
       </view>
     </view>

@@ -12,6 +12,16 @@ import {
 import { VideoProvider } from '../../utils/types.js';
 import { chatWithPet } from '../../utils/services/geminiService.js';
 import { cloudConfig } from '../../config/index.js';
+import {
+  getActiveDevice,
+  getActiveDeviceId,
+  getDeviceErrorMessage,
+  getDevicesCache,
+  listDevices,
+  mapDevicesForPicker,
+  setActiveDevice,
+  syncPetFromDevice,
+} from '../../utils/services/deviceService.js';
 
 const app = getApp();
 
@@ -31,6 +41,11 @@ Page({
     isTyping: false,
     scrollTop: 0,
     isLiveSync: false,
+    activeDeviceId: '',
+    activeDeviceName: '',
+    devices: [],
+    isSwitchingPet: false,
+    liveSyncHint: '',
 
     sensors: { battery: 85, temp: 24 },
     statusConfig: {
@@ -55,14 +70,30 @@ Page({
   _retryAttempt: 0,
   _videoLoadId: 0,
 
-  onShow() {
+  async onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ value: 'home' });
     }
 
+    const token = wx.getStorageSync('access_token');
+    if (!token) {
+      wx.redirectTo({ url: '/pages/login/login' });
+      return;
+    }
+
+    await this.refreshActiveDevice();
+
     const pet = app.globalData.petProfile;
     if (!pet) {
-      wx.redirectTo({ url: '/pages/login/login' });
+      wx.showModal({
+        title: '绑定设备',
+        content: '请先绑定设备并创建宠物',
+        confirmText: '去设置',
+        showCancel: false,
+        success() {
+          wx.switchTab({ url: '/pages/setting/index' });
+        },
+      });
       return;
     }
 
@@ -78,8 +109,89 @@ Page({
     }
   },
 
+  async refreshActiveDevice() {
+    const token = wx.getStorageSync('access_token');
+    if (!token) {
+      this.setData({
+        activeDeviceId: '',
+        activeDeviceName: '',
+        liveSyncHint: '请先登录',
+      });
+      return;
+    }
+    try {
+      await listDevices();
+    } catch (e) {
+      console.warn('[Home] listDevices failed', e);
+    }
+    const active = getActiveDevice();
+    const activeDeviceId = getActiveDeviceId();
+    const pet = active ? syncPetFromDevice(active) : null;
+    const devices = mapDevicesForPicker(getDevicesCache(), activeDeviceId);
+    this.setData({
+      activeDeviceId,
+      activeDeviceName: active ? (active.pet_name || active.name || active.device_id) : '',
+      devices,
+      liveSyncHint: activeDeviceId ? '' : '请先在设置页绑定设备',
+      pet: pet || this.data.pet,
+    });
+    if (pet && !this.data.videoDisabled) {
+      this._videoLoadId = (this._videoLoadId || 0) + 1;
+      this.loadVideo(pet);
+    }
+  },
+
+  async handleSelectPet(e) {
+    const deviceId = e.currentTarget.dataset.id;
+    if (!deviceId || deviceId === this.data.activeDeviceId || this.data.isSwitchingPet) {
+      return;
+    }
+
+    this.stopVideoTaskPolling();
+
+    this.setData({ isSwitchingPet: true });
+    try {
+      await setActiveDevice(deviceId);
+      const active = getActiveDevice();
+      const pet = active ? syncPetFromDevice(active) : null;
+      const activeDeviceId = getActiveDeviceId();
+      this._videoLoadId = (this._videoLoadId || 0) + 1;
+      this.setData({
+        activeDeviceId,
+        activeDeviceName: active ? (active.pet_name || active.name || active.device_id) : '',
+        devices: mapDevicesForPicker(getDevicesCache(), activeDeviceId),
+        pet,
+        videoSrc: null,
+        videoError: false,
+        videoUnavailableReason: '',
+        chatHistory: [],
+        showChat: false,
+        liveSyncHint: activeDeviceId ? '' : '请先在设置页绑定设备',
+      });
+      if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+        this.getTabBar().setData({ show: true });
+      }
+      if (pet && !this.data.videoDisabled) {
+        this.loadVideo(pet);
+      }
+      if (this.data.isLiveSync) {
+        this.fetchLocalBackendStatus();
+      }
+      wx.showToast({ title: '已切换宠物', icon: 'success' });
+    } catch (err) {
+      wx.showToast({ title: getDeviceErrorMessage(err), icon: 'none' });
+    } finally {
+      this.setData({ isSwitchingPet: false });
+    }
+  },
+
   onLiveSyncChange(e) {
     const isLiveSync = e.detail.value;
+    if (isLiveSync && !getActiveDeviceId()) {
+      wx.showToast({ title: '请先在设置页绑定设备', icon: 'none' });
+      this.setData({ isLiveSync: false });
+      return;
+    }
     this.setData({ isLiveSync });
     if (isLiveSync) {
       this.startLocalStatusPolling();
@@ -120,11 +232,22 @@ Page({
       console.warn('[LiveSync] localBackendBaseUrl is empty');
       return;
     }
+    const deviceId = getActiveDeviceId();
+    if (!deviceId) {
+      this.setData({ liveSyncHint: '请先在设置页绑定设备' });
+      return;
+    }
+    const headers = getBackendVideoHttpHeader();
     wx.request({
-      url: `${base}/api/pet/status`,
+      url: `${base}/api/pet/status?device_id=${encodeURIComponent(deviceId)}`,
       method: 'GET',
+      header: headers,
       timeout: 8000,
       success: (res) => {
+        if (res.statusCode === 403) {
+          this.setData({ liveSyncHint: '当前设备无权访问' });
+          return;
+        }
         if (res.statusCode !== 200 || !res.data) return;
         const body = res.data;
         const behaviour = body.behaviour;
@@ -132,7 +255,7 @@ Page({
         const status = this.mapBehaviourToStatus(String(behaviour));
         if (!status || !this.data.pet || this.data.pet.currentStatus === status) return;
         const pet = { ...this.data.pet, currentStatus: status };
-        this.setData({ pet });
+        this.setData({ pet, liveSyncHint: '' });
         app.updatePetProfile(pet);
         if (!this.data.videoDisabled) {
           this._videoLoadId = (this._videoLoadId || 0) + 1;

@@ -1,33 +1,10 @@
 import request from '~/api/request';
-import { PetStatus } from '../../utils/types.js';
 import { setCurrentAccountPhone } from '../../utils/services/videoService.js';
-
-function syncPetFromUser(user) {
-  const app = getApp();
-  let baseImage = user.pet_image || '';
-  if (typeof baseImage === 'string' && baseImage.startsWith('data:')) {
-    try {
-      const fs = wx.getFileSystemManager();
-      const m = /^data:image\/(\w+);base64,(.+)$/i.exec(baseImage);
-      const ext = (m && m[1]) || 'jpg';
-      const b64 = (m && m[2]) || (baseImage.includes(',') ? baseImage.split(',')[1] : '');
-      if (b64) {
-        const path = `${wx.env.USER_DATA_PATH}/pet_avatar.${ext}`;
-        fs.writeFileSync(path, b64, 'base64');
-        baseImage = path;
-      }
-    } catch (e) {
-      console.warn('syncPetFromUser image', e);
-    }
-  }
-  app.updatePetProfile({
-    name: user.pet_name || '宠物',
-    type: 'cat',
-    baseImage,
-    currentStatus: PetStatus.WAITING,
-    statusDescription: 'Thinking of you...',
-  });
-}
+import {
+  getActiveDevice,
+  listDevices,
+  syncPetFromDevice,
+} from '../../utils/services/deviceService.js';
 
 Page({
   data: {
@@ -80,8 +57,30 @@ Page({
       if (res.success && res.data && res.data.token) {
         wx.setStorageSync('access_token', res.data.token);
         setCurrentAccountPhone(this.data.phoneNumber);
-        if (res.data.user) {
-          syncPetFromUser(res.data.user);
+        try {
+          const devices = await listDevices();
+          const active = getActiveDevice();
+          if (active) {
+            syncPetFromDevice(active);
+          }
+          if (!devices || devices.length === 0) {
+            wx.showModal({
+              title: '绑定设备',
+              content: '您尚未绑定硬件设备，请前往「设置」页输入配对码并创建宠物。',
+              confirmText: '去设置',
+              cancelText: '稍后',
+              success(modalRes) {
+                if (modalRes.confirm) {
+                  wx.switchTab({ url: '/pages/setting/index' });
+                } else {
+                  wx.switchTab({ url: '/pages/home/index' });
+                }
+              },
+            });
+            return;
+          }
+        } catch (e) {
+          console.warn('[Login] listDevices failed', e);
         }
         wx.switchTab({
           url: '/pages/home/index',
