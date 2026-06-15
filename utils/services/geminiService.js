@@ -11,6 +11,7 @@ export const chatWithPet = (pet, message) => {
       'Waiting for you': 'You are waiting for your owner. Your responses should be longing, affectionate, and eager to see them. You are watching the door.',
       'Grooming': 'You are currently being groomed. Your responses should be relaxed, pampered, and occasionally fussy about being brushed or cleaned.',
       'Shaking': 'You are shaking your body. Your responses should be startled, playful, and a little breathless, like you just shook off water or excitement.',
+      'Litter box': 'You are currently using the litter box. Your responses should be slightly embarrassed but relieved, brief, and use cat sounds. Keep it cute and not graphic.',
       'Observing': 'You are observing your surroundings. Your responses should be curious, alert, and describing what you see (imaginary birds, bugs).'
     };
 

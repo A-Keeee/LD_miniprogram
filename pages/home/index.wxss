@@ -420,40 +420,56 @@
   opacity: 0.5;
 }
 
-.grid-4 {
+.status-grid {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 16rpx;
 }
 
+.status-row {
+  display: flex;
+  gap: 16rpx;
+}
+
+.status-row--center {
+  justify-content: center;
+}
+
 .status-btn {
-  flex: 1;
+  flex: 0 0 calc((100% - 48rpx) / 4);
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12rpx;
-  padding: 20rpx 0;
-  border-radius: 24rpx;
-  border: 2rpx solid transparent;
+  justify-content: center;
+  gap: 8rpx;
+  min-height: 108rpx;
+  padding: 16rpx 6rpx;
+  border-radius: 20rpx;
+  border: 2rpx solid #f3f4f6;
   background-color: #ffffff;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.04);
 }
 
 .status-btn.active {
-  border-color: #a855f7;
+  border-color: #c084fc;
   background-color: #faf5ff;
   color: #7e22ce;
-  box-shadow: 0 6rpx 12rpx rgba(168,85,247,0.1);
-  transform: scale(1.03);
+  box-shadow: 0 4rpx 16rpx rgba(168, 85, 247, 0.14);
 }
 
 .s-icon {
-  font-size: 40rpx;
+  font-size: 36rpx;
+  line-height: 1;
 }
 
 .s-label {
   font-size: 20rpx;
-  font-weight: bold;
+  font-weight: 600;
   color: #6b7280;
+  text-align: center;
+  line-height: 1.25;
+  word-break: keep-all;
 }
 
 .status-btn.active .s-label {

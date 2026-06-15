@@ -5,6 +5,7 @@ export const PetStatus = {
   WAITING: 'Waiting for you',
   GROOMING: 'Grooming',
   SHAKING: 'Shaking',
+  LITTER_BOX: 'Litter box',
   OBSERVING: 'Observing'
 };
 

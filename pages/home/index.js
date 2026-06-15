@@ -54,7 +54,8 @@ Page({
       [PetStatus.EATING]:   { label: '吃饭', icon: '🥣' },
       [PetStatus.WAITING]:  { label: '等待', icon: '👀' },
       [PetStatus.GROOMING]: { label: '梳理', icon: '🧼' },
-      [PetStatus.SHAKING]:  { label: '抖动身体', icon: '〰️' }
+      [PetStatus.SHAKING]:  { label: '抖动身体', icon: '〰️' },
+      [PetStatus.LITTER_BOX]: { label: '上厕所', icon: '🚽' }
     },
     statusList: [
       PetStatus.SLEEPING,
@@ -62,7 +63,19 @@ Page({
       PetStatus.EATING,
       PetStatus.WAITING,
       PetStatus.GROOMING,
-      PetStatus.SHAKING
+      PetStatus.SHAKING,
+      PetStatus.LITTER_BOX
+    ],
+    statusListRow1: [
+      PetStatus.SLEEPING,
+      PetStatus.WALKING,
+      PetStatus.EATING,
+      PetStatus.WAITING
+    ],
+    statusListRow2: [
+      PetStatus.GROOMING,
+      PetStatus.SHAKING,
+      PetStatus.LITTER_BOX
     ]
   },
 
@@ -284,6 +297,12 @@ Page({
         return PetStatus.GROOMING;
       case 'shake':
         return PetStatus.SHAKING;
+      case 'litter box':
+      case 'litter_box':
+      case 'toilet':
+      case 'bathroom':
+      case 'wc':
+        return PetStatus.LITTER_BOX;
       default:
         return null;
     }

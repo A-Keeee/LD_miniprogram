@@ -147,9 +147,11 @@
         <switch checked="{{isLiveSync}}" bindchange="onLiveSyncChange" color="#a855f7" style="transform: scale(0.7); margin-right: -16rpx;" />
       </view>
     </view>
-    <view class="grid-4">
-      <block wx:for="{{statusList}}" wx:key="*this">
-        <view 
+    <view class="status-grid">
+      <view class="status-row">
+        <view
+          wx:for="{{statusListRow1}}"
+          wx:key="*this"
           class="status-btn {{pet.currentStatus === item ? 'active' : ''}} {{isLiveSync ? 'status-sync-locked' : ''}}"
           data-status="{{item}}"
           bindtap="handleStatusChange"
@@ -157,7 +159,19 @@
           <text class="s-icon">{{statusConfig[item].icon}}</text>
           <text class="s-label">{{statusConfig[item].label}}</text>
         </view>
-      </block>
+      </view>
+      <view class="status-row status-row--center">
+        <view
+          wx:for="{{statusListRow2}}"
+          wx:key="*this"
+          class="status-btn {{pet.currentStatus === item ? 'active' : ''}} {{isLiveSync ? 'status-sync-locked' : ''}}"
+          data-status="{{item}}"
+          bindtap="handleStatusChange"
+        >
+          <text class="s-icon">{{statusConfig[item].icon}}</text>
+          <text class="s-label">{{statusConfig[item].label}}</text>
+        </view>
+      </view>
     </view>
   </view>
 

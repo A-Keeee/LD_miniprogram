@@ -148,6 +148,7 @@ export const cloudConfig = {
 | `Feed` | `PetStatus.EATING` | `static/video/eating.mp4` |
 | `Groom` | `PetStatus.GROOMING` | `static/video/grooming.mp4` |
 | `Shake` | `PetStatus.SHAKING` | `static/video/shaking.mp4` |
+| `Litter box` | `PetStatus.LITTER_BOX` | 后端生成/缓存视频 |
 
 > 微信 `<video>` 组件不支持直接播放包内路径，预置视频会先复制到用户目录再作为 `src` 使用。
 
