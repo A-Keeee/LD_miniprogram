@@ -1,6 +1,6 @@
 import { PetStatus, VideoProvider } from '../types.js';
 import request from '../../api/request';
-import appConfig from '../../config/index.js';
+import { cloudConfig } from '../../config/index.js';
 import { getActiveDeviceId } from './deviceService.js';
 
 // WeChat <video> component requires network URLs or temp file paths from wx APIs
@@ -18,14 +18,96 @@ const PACKAGE_VIDEO_FILES = {
 };
 
 const USER_PHONE_STORAGE_KEY = 'user_phone';
-const GENERATED_VIDEO_CACHE_KEY = 'generated_video_cache_v3';
+const GENERATED_VIDEO_CACHE_KEY = 'generated_video_cache_v4';
+const GENERATED_VIDEO_DIR_NAME = 'generated-video';
 
 // Cache of copied file paths (package → temp user storage)
 const videoPathCache = {};
 const generatedVideoPathCache = {};
+const generatedVideoDownloadTasks = {};
 let _currentAccountPhone = '';
 
-const memoryCacheKey = (phone, status) => `${phone}::${status}`;
+const getCurrentDeviceKey = (deviceId) => String(deviceId || getActiveDeviceId() || '').trim();
+
+const memoryCacheKey = (phone, deviceId, status) => `${phone}::${deviceId}::${status}`;
+
+const getGeneratedVideoDir = () => `${wx.env.USER_DATA_PATH}/${GENERATED_VIDEO_DIR_NAME}`;
+
+const safeFileNamePart = (value) => {
+  const safe = String(value || '').trim().replace(/[^A-Za-z0-9._-]/g, '_');
+  return safe || 'unknown';
+};
+
+const hashString = (value) => {
+  const raw = String(value || '');
+  let hash = 0;
+  for (let i = 0; i < raw.length; i += 1) {
+    hash = (hash * 31 + raw.charCodeAt(i)) % 1000000007;
+  }
+  return String(hash);
+};
+
+const getGeneratedVideoFilePath = (phone, deviceId, status) => {
+  const key = memoryCacheKey(phone, deviceId, status);
+  const fileName = [
+    safeFileNamePart(phone),
+    safeFileNamePart(deviceId),
+    safeFileNamePart(status),
+    hashString(key),
+  ].join('-');
+  return `${getGeneratedVideoDir()}/${fileName}.mp4`;
+};
+
+const getCacheEntryPath = (entry) => {
+  if (!entry) {
+    return '';
+  }
+  if (typeof entry === 'string') {
+    return entry;
+  }
+  return String(entry.path || '').trim();
+};
+
+const ensureDirectory = (dirPath) => {
+  const fs = wx.getFileSystemManager();
+  try {
+    fs.accessSync(dirPath);
+    return true;
+  } catch (e) {
+    try {
+      fs.mkdirSync(dirPath, true);
+      return true;
+    } catch (mkdirErr) {
+      console.warn('[Video] Failed to create cache dir:', mkdirErr);
+      return false;
+    }
+  }
+};
+
+const removeLocalFile = (path) => {
+  const p = String(path || '').trim();
+  if (!p) {
+    return;
+  }
+  try {
+    wx.getFileSystemManager().unlinkSync(p);
+  } catch (e) {
+    // Ignore missing files and failed cleanup; cache will be retried later.
+  }
+};
+
+const cancelGeneratedVideoDownload = (phone, deviceId, status) => {
+  const memKey = memoryCacheKey(phone, deviceId, status);
+  const task = generatedVideoDownloadTasks[memKey];
+  if (!task) {
+    return;
+  }
+  task.canceled = true;
+  if (task.downloadTask && typeof task.downloadTask.abort === 'function') {
+    task.downloadTask.abort();
+  }
+  delete generatedVideoDownloadTasks[memKey];
+};
 
 export const setCurrentAccountPhone = (phone) => {
   const p = String(phone || '').trim();
@@ -68,7 +150,9 @@ const readAllGeneratedVideoCache = () => {
     if (saved && typeof saved === 'object') {
       return saved;
     }
-  } catch (e) {}
+  } catch (e) {
+    // Ignore malformed cache metadata; the file can be downloaded again.
+  }
   return {};
 };
 
@@ -80,46 +164,81 @@ const writeAllGeneratedVideoCache = (map) => {
   }
 };
 
-const readAccountGeneratedVideoCache = (phone) => {
+const readDeviceGeneratedVideoCache = (phone, deviceId) => {
   const p = String(phone || '').trim();
-  if (!p) {
+  const d = getCurrentDeviceKey(deviceId);
+  if (!p || !d) {
     return {};
   }
   const all = readAllGeneratedVideoCache();
   const accountMap = all[p];
-  return accountMap && typeof accountMap === 'object' ? accountMap : {};
+  if (!accountMap || typeof accountMap !== 'object') {
+    return {};
+  }
+  const deviceMap = accountMap[d];
+  return deviceMap && typeof deviceMap === 'object' ? deviceMap : {};
 };
 
-const writeAccountGeneratedVideoCacheEntry = (phone, status, path) => {
+const writeGeneratedVideoCacheEntry = (phone, deviceId, status, path) => {
   const p = String(phone || '').trim();
+  const d = getCurrentDeviceKey(deviceId);
   const s = String(status || '').trim();
-  if (!p || !s) {
+  const filePath = String(path || '').trim();
+  if (!p || !d || !s || !filePath) {
     return;
   }
   const all = readAllGeneratedVideoCache();
   if (!all[p] || typeof all[p] !== 'object') {
     all[p] = {};
   }
-  all[p][s] = path;
+  if (!all[p][d] || typeof all[p][d] !== 'object') {
+    all[p][d] = {};
+  }
+  all[p][d][s] = filePath;
   writeAllGeneratedVideoCache(all);
 };
 
-const removeGeneratedCacheEntry = (phone, status) => {
+const removeGeneratedCacheEntry = (phone, status, deviceId, options = {}) => {
   const p = String(phone || '').trim();
   const s = String(status || '').trim();
   if (!p || !s) {
     return;
   }
+  const targetDevice = getCurrentDeviceKey(deviceId);
+  const deleteFile = options.deleteFile !== false;
   const all = readAllGeneratedVideoCache();
-  if (!all[p] || !all[p][s]) {
-    return;
-  }
-  delete all[p][s];
-  if (Object.keys(all[p]).length === 0) {
+  const accountMap = all[p] && typeof all[p] === 'object' ? all[p] : {};
+  const deviceIds = targetDevice ? [targetDevice] : Object.keys(accountMap);
+  let changed = false;
+
+  deviceIds.forEach((d) => {
+    cancelGeneratedVideoDownload(p, d, s);
+    const deviceMap = accountMap[d];
+    if (
+      !deviceMap ||
+      typeof deviceMap !== 'object' ||
+      !Object.prototype.hasOwnProperty.call(deviceMap, s)
+    ) {
+      return;
+    }
+    const path = getCacheEntryPath(deviceMap[s]);
+    if (deleteFile) {
+      removeLocalFile(path);
+    }
+    delete deviceMap[s];
+    delete generatedVideoPathCache[memoryCacheKey(p, d, s)];
+    if (Object.keys(deviceMap).length === 0) {
+      delete accountMap[d];
+    }
+    changed = true;
+  });
+
+  if (Object.keys(accountMap).length === 0) {
     delete all[p];
   }
-  writeAllGeneratedVideoCache(all);
-  delete generatedVideoPathCache[memoryCacheKey(p, s)];
+  if (changed) {
+    writeAllGeneratedVideoCache(all);
+  }
 };
 
 const verifyLocalVideoFile = (path) => {
@@ -135,25 +254,23 @@ const verifyLocalVideoFile = (path) => {
   }
 };
 
-const getGeneratedVideoPath = (status) => {
+const getGeneratedVideoPath = (status, deviceId) => {
   const phone = getCurrentAccountKey();
+  const deviceKey = getCurrentDeviceKey(deviceId);
   const s = String(status || '').trim();
-  if (!s) {
+  if (!s || !phone || !deviceKey) {
     return '';
   }
-  const memKey = phone ? memoryCacheKey(phone, s) : '';
-  if (memKey && generatedVideoPathCache[memKey]) {
+  const memKey = memoryCacheKey(phone, deviceKey, s);
+  if (generatedVideoPathCache[memKey]) {
     const cached = verifyLocalVideoFile(generatedVideoPathCache[memKey]);
     if (cached) {
       return cached;
     }
     delete generatedVideoPathCache[memKey];
   }
-  if (!phone) {
-    return '';
-  }
-  const map = readAccountGeneratedVideoCache(phone);
-  const path = String(map[s] || '').trim();
+  const map = readDeviceGeneratedVideoCache(phone, deviceKey);
+  const path = getCacheEntryPath(map[s]);
   if (!path) {
     return '';
   }
@@ -162,7 +279,7 @@ const getGeneratedVideoPath = (status) => {
     generatedVideoPathCache[memKey] = verified;
     return verified;
   }
-  removeGeneratedCacheEntry(phone, s);
+  removeGeneratedCacheEntry(phone, s, deviceKey);
   return '';
 };
 
@@ -205,7 +322,7 @@ const getAuthDownloadHeader = () => {
 };
 
 const getBackendVideoFileUrl = (state, deviceId) => {
-  const base = (appConfig.cloudConfig.localBackendBaseUrl || '').replace(/\/$/, '');
+  const base = (cloudConfig.localBackendBaseUrl || '').replace(/\/$/, '');
   const s = encodeURIComponent(String(state || '').trim());
   const d = encodeURIComponent(String(deviceId || getActiveDeviceId() || '').trim());
   return `${base}/api/video/tasks/${s}/file?device_id=${d}`;
@@ -227,61 +344,74 @@ export const getBackendVideoHttpHeader = () => getAuthDownloadHeader();
  * Copy a video from the mini program package to user data storage
  * so it can be used as a valid <video> src.
  */
-const copyVideoToUserStorage = (status) => {
-  return new Promise((resolve, reject) => {
-    if (videoPathCache[status]) {
-      resolve(videoPathCache[status]);
-      return;
-    }
+const copyVideoToUserStorage = (status) => new Promise((resolve, reject) => {
+  if (videoPathCache[status]) {
+    resolve(videoPathCache[status]);
+    return;
+  }
 
-    const srcPath = packageVideoPath(status);
-    if (!srcPath || !packageVideoExists(status)) {
-      reject(new Error('package_video_missing'));
-      return;
-    }
+  const srcPath = packageVideoPath(status);
+  if (!srcPath || !packageVideoExists(status)) {
+    reject(new Error('package_video_missing'));
+    return;
+  }
 
-    const fs = wx.getFileSystemManager();
-    const destDir = `${wx.env.USER_DATA_PATH}/video`;
-    const fileName = srcPath.split('/').pop();
-    const destPath = `${destDir}/${fileName}`;
+  const fs = wx.getFileSystemManager();
+  const destDir = `${wx.env.USER_DATA_PATH}/video`;
+  const fileName = srcPath.split('/').pop();
+  const destPath = `${destDir}/${fileName}`;
 
-    // Ensure directory exists
+  // Ensure directory exists
+  try {
+    fs.accessSync(destDir);
+  } catch (e) {
     try {
-      fs.accessSync(destDir);
-    } catch (e) {
-      try {
-        fs.mkdirSync(destDir, true);
-      } catch (mkdirErr) {
-        console.error('[Video] Failed to create dir:', mkdirErr);
-      }
+      fs.mkdirSync(destDir, true);
+    } catch (mkdirErr) {
+      console.error('[Video] Failed to create dir:', mkdirErr);
     }
+  }
 
-    // Check if file already exists
-    try {
-      fs.accessSync(destPath);
+  // Check if file already exists
+  try {
+    fs.accessSync(destPath);
+    videoPathCache[status] = destPath;
+    resolve(destPath);
+    return;
+  } catch (e) {
+    // File doesn't exist, need to copy
+  }
+
+  // Copy from package to user storage
+  fs.copyFile({
+    srcPath,
+    destPath: destPath,
+    success: () => {
       videoPathCache[status] = destPath;
       resolve(destPath);
-      return;
-    } catch (e) {
-      // File doesn't exist, need to copy
+    },
+    fail: (err) => {
+      console.error('[Video] Copy failed:', err);
+      reject(err);
     }
-
-    // Copy from package to user storage
-    fs.copyFile({
-      srcPath,
-      destPath: destPath,
-      success: () => {
-        console.log('[Video] Copied to user storage:', destPath);
-        videoPathCache[status] = destPath;
-        resolve(destPath);
-      },
-      fail: (err) => {
-        console.error('[Video] Copy failed:', err);
-        reject(err);
-      }
-    });
   });
-};
+});
+
+export async function getStatusVideoTask(state, deviceId) {
+  const s = String(state || '').trim();
+  if (!s) {
+    throw new Error('missing_state');
+  }
+  const id = deviceId || getActiveDeviceId();
+  if (!id) {
+    throw new Error('missing_device_id');
+  }
+  const res = await request(
+    `/api/video/tasks/${encodeURIComponent(s)}?device_id=${encodeURIComponent(id)}`,
+    'get'
+  );
+  return res.data;
+}
 
 /**
  * Resolve playable video for a status.
@@ -291,33 +421,36 @@ export const resolveStatusVideoUrl = async (status, options = {}) => {
   const s = String(status || '').trim();
   const allowPresetFallback = Boolean(options && options.allowPresetFallback);
   const skipBackend = Boolean(options && options.skipBackend);
+  const deviceId = getCurrentDeviceKey(options && options.deviceId);
   if (!s) {
     return { url: null, pending: false };
   }
 
-  const generatedPath = getGeneratedVideoPath(s);
+  const generatedPath = getGeneratedVideoPath(s, deviceId);
   if (generatedPath) {
     return { url: generatedPath, pending: false, source: 'local' };
   }
 
   if (!skipBackend) {
     try {
-      const task = await getStatusVideoTask(s);
+      const task = await getStatusVideoTask(s, deviceId);
       const taskStatus = String((task && task.status) || '').toLowerCase();
       if (taskStatus === 'succeeded' && task.video_ready) {
         return {
-          url: getBackendVideoStreamUrl(s),
+          url: getBackendVideoStreamUrl(s, deviceId),
           pending: false,
           source: 'backend',
           remote: true,
         };
-      } else if (taskStatus === 'succeeded' && !task.video_ready) {
+      }
+      if (taskStatus === 'succeeded' && !task.video_ready) {
         return { url: null, pending: true, source: 'backend_caching' };
-      } else if (taskStatus && taskStatus !== 'failed') {
+      }
+      if (taskStatus && taskStatus !== 'failed') {
         return { url: null, pending: true, source: 'backend_pending' };
       }
     } catch (e) {
-      console.log('[Video] backend task lookup failed for', s, e);
+      console.warn('[Video] backend task lookup failed for', s, e);
     }
   }
 
@@ -337,13 +470,11 @@ export const resolveStatusVideoUrl = async (status, options = {}) => {
  * Get a playable video URL for the pet's current status.
  */
 export const getPetStatusVideo = async (pet, options = {}) => {
-  const result = await resolveStatusVideoUrl(pet && pet.currentStatus, options);
-  return result;
+  const deviceId = (options && options.deviceId) || (pet && pet.deviceId);
+  return resolveStatusVideoUrl(pet && pet.currentStatus, { ...options, deviceId });
 };
 
-export const getRemoteFallback = (pet) => {
-  return null;
-};
+export const getRemoteFallback = (pet) => null;
 
 export const hasStatusVideo = (status) => {
   const s = String(status || '').trim();
@@ -356,7 +487,9 @@ export const getInitialVideoSettings = () => {
     if (saved) {
       return JSON.parse(saved);
     }
-  } catch (e) {}
+  } catch (e) {
+    // Ignore invalid settings and fall back to defaults.
+  }
 
   return {
     provider: VideoProvider.LOCAL,
@@ -376,7 +509,27 @@ export const saveVideoSettings = (settings) => {
 
 export const clearGeneratedVideoForState = (state) => {
   const phone = getCurrentAccountKey();
-  removeGeneratedCacheEntry(phone, state);
+  const deviceId = getCurrentDeviceKey();
+  removeGeneratedCacheEntry(phone, state, deviceId);
+};
+
+export const getGeneratedVideoCacheStatus = (states, options = {}) => {
+  const list = Array.isArray(states) ? states : [];
+  const deviceId = getCurrentDeviceKey(options && options.deviceId);
+  const items = list.map((state) => {
+    const s = String(state || '').trim();
+    return {
+      state: s,
+      cached: Boolean(s && getGeneratedVideoPath(s, deviceId)),
+    };
+  });
+
+  const cachedCount = items.filter((item) => item.cached).length;
+  return {
+    cachedCount,
+    total: items.length,
+    items,
+  };
 };
 
 export const createStatusVideoTask = async (state, options = {}) => {
@@ -390,22 +543,6 @@ export const createStatusVideoTask = async (state, options = {}) => {
     throw new Error('missing_device_id');
   }
   const res = await request('/api/video/tasks', 'post', { state: s, force, device_id: deviceId });
-  return res.data;
-};
-
-export const getStatusVideoTask = async (state, deviceId) => {
-  const s = String(state || '').trim();
-  if (!s) {
-    throw new Error('missing_state');
-  }
-  const id = deviceId || getActiveDeviceId();
-  if (!id) {
-    throw new Error('missing_device_id');
-  }
-  const res = await request(
-    `/api/video/tasks/${encodeURIComponent(s)}?device_id=${encodeURIComponent(id)}`,
-    'get'
-  );
   return res.data;
 };
 
@@ -439,23 +576,106 @@ export const hasAiGeneratedVideoForState = async (state) => {
 export const filterStatesNeedingAiVideo = async (states) => {
   const list = Array.isArray(states) ? states : [];
   const needing = [];
-  for (const state of list) {
+
+  await list.reduce((chain, state) => chain.then(async () => {
     const created = await hasAiGeneratedVideoForState(state);
     if (!created) {
       needing.push(state);
     }
-  }
+  }), Promise.resolve());
+
   return needing;
 };
 
-export const cacheGeneratedVideoForState = (state) => {
+export const cacheGeneratedVideoForState = (state, options = {}) => {
   const s = String(state || '').trim();
   if (!s) {
     return Promise.reject(new Error('missing_state'));
   }
-  const cached = getGeneratedVideoPath(s);
+  const phone = getCurrentAccountKey();
+  const deviceId = getCurrentDeviceKey(options && options.deviceId);
+  if (!phone || !deviceId) {
+    return Promise.reject(new Error('missing_cache_context'));
+  }
+
+  const cached = getGeneratedVideoPath(s, deviceId);
   if (cached) {
     return Promise.resolve(cached);
   }
-  return Promise.resolve(getBackendVideoStreamUrl(s));
+
+  const memKey = memoryCacheKey(phone, deviceId, s);
+  const existingTask = generatedVideoDownloadTasks[memKey];
+  if (existingTask && existingTask.promise) {
+    return existingTask.promise;
+  }
+
+  const filePath = getGeneratedVideoFilePath(phone, deviceId, s);
+  const existingFile = verifyLocalVideoFile(filePath);
+  if (existingFile) {
+    generatedVideoPathCache[memKey] = existingFile;
+    writeGeneratedVideoCacheEntry(phone, deviceId, s, existingFile);
+    return Promise.resolve(existingFile);
+  }
+
+  if (!ensureDirectory(getGeneratedVideoDir())) {
+    return Promise.reject(new Error('cache_dir_unavailable'));
+  }
+  removeLocalFile(filePath);
+
+  const taskState = {
+    canceled: false,
+    downloadTask: null,
+    promise: null,
+  };
+  generatedVideoDownloadTasks[memKey] = taskState;
+
+  taskState.promise = new Promise((resolve, reject) => {
+    const failDownload = (err) => {
+      removeLocalFile(filePath);
+      reject(err || new Error('download_failed'));
+    };
+
+    try {
+      taskState.downloadTask = wx.downloadFile({
+        url: getBackendVideoFileUrl(s, deviceId),
+        header: getAuthDownloadHeader(),
+        filePath,
+        success: (res) => {
+          if (taskState.canceled) {
+            failDownload(new Error('download_canceled'));
+            return;
+          }
+          if (res.statusCode !== 200) {
+            failDownload(new Error(`download_status_${res.statusCode}`));
+            return;
+          }
+
+          const savedPath = verifyLocalVideoFile(res.filePath || filePath);
+          if (!savedPath) {
+            failDownload(new Error('download_file_missing'));
+            return;
+          }
+
+          generatedVideoPathCache[memKey] = savedPath;
+          writeGeneratedVideoCacheEntry(phone, deviceId, s, savedPath);
+          resolve(savedPath);
+        },
+        fail: (err) => {
+          failDownload(err);
+        },
+        complete: () => {
+          if (generatedVideoDownloadTasks[memKey] === taskState) {
+            delete generatedVideoDownloadTasks[memKey];
+          }
+        },
+      });
+    } catch (err) {
+      if (generatedVideoDownloadTasks[memKey] === taskState) {
+        delete generatedVideoDownloadTasks[memKey];
+      }
+      failDownload(err);
+    }
+  });
+
+  return taskState.promise;
 };

@@ -154,6 +154,51 @@
         />
       </view>
     </view>
+
+    <view class="cache-section">
+      <view class="cache-header">
+        <view class="cache-title-wrap">
+          <t-icon name="video-filled" size="18px" color="#7e22ce" />
+          <text class="cache-title">本地视频缓存</text>
+        </view>
+        <view class="cache-actions">
+          <text class="cache-summary">{{videoCacheSummaryText}}</text>
+          <button
+            class="cache-all-btn"
+            bindtap="handleCacheAllVideos"
+            loading="{{isCachingAllVideos}}"
+            disabled="{{videoCacheItems.length === 0 || videoCacheCachedCount === videoCacheTotal || isCachingAllVideos || cachingVideoState}}"
+          >一键缓存</button>
+        </view>
+      </view>
+
+      <view class="cache-list" wx:if="{{videoCacheItems.length > 0}}">
+        <view
+          wx:for="{{videoCacheItems}}"
+          wx:key="state"
+          class="cache-item"
+        >
+          <view class="cache-item-main">
+            <text class="cache-name">{{item.label}}</text>
+            <text class="cache-tag {{item.cached ? 'cached' : ''}}">{{item.statusText}}</text>
+          </view>
+          <button
+            wx:if="{{!item.cached}}"
+            class="cache-item-btn"
+            data-state="{{item.state}}"
+            catchtap="handleCacheVideo"
+            loading="{{cachingVideoState === item.state}}"
+            disabled="{{isCachingAllVideos || cachingVideoState}}"
+          >{{cachingVideoState === item.state ? '缓存中' : '缓存'}}</button>
+          <button
+            wx:else
+            class="cache-item-btn cached"
+            disabled="{{true}}"
+          >已完成</button>
+        </view>
+      </view>
+      <view class="cache-empty" wx:else>{{videoCacheEmptyText}}</view>
+    </view>
   </view>
   
   <view class="info-box">
@@ -167,4 +212,18 @@
     <t-icon wx:if="{{!saved}}" name="save" size="20px" color="#ffffff" />
     <text style="margin-left:8px;">{{saved ? '已保存!' : '保存设置'}}</text>
   </button>
+
+  <view class="card account-card">
+    <view class="card-header">
+      <t-icon name="user" size="20px" color="#7e22ce" />
+      <text class="card-title">账号</text>
+    </view>
+    <view class="account-desc">退出后会清除登录状态和当前设备选择，本地视频缓存将保留。</view>
+    <button
+      class="logout-btn"
+      bindtap="handleLogout"
+      loading="{{isLoggingOut}}"
+      disabled="{{isLoggingOut}}"
+    >退出登录</button>
+  </view>
 </view>

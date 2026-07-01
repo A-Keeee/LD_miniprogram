@@ -1,5 +1,6 @@
-import { PetStatus } from '../../utils/types.js';
+import { PetStatus, VideoProvider } from '../../utils/types.js';
 import {
+  cacheGeneratedVideoForState,
   clearGeneratedVideoForState,
   createStatusVideoTask,
   filterStatesNeedingAiVideo,
@@ -9,7 +10,6 @@ import {
   getStatusVideoTask,
   hasStatusVideo,
 } from '../../utils/services/videoService.js';
-import { VideoProvider } from '../../utils/types.js';
 import { chatWithPet } from '../../utils/services/geminiService.js';
 import { cloudConfig } from '../../config/index.js';
 import {
@@ -339,6 +339,16 @@ Page({
     apply();
   },
 
+  queueGeneratedVideoCache(status, deviceId) {
+    cacheGeneratedVideoForState(status, { deviceId }).catch((err) => {
+      const msg = String((err && (err.message || err.errMsg)) || '');
+      if (msg === 'download_canceled' || msg.includes('abort')) {
+        return;
+      }
+      console.warn('[Video] cache generated video failed', status, err);
+    });
+  },
+
   async loadVideo(petArg) {
     const pet = petArg || this.data.pet;
     if (!pet) return;
@@ -386,6 +396,9 @@ Page({
     }
 
     this.applyVideoSrc(url, loadId, status, { remote });
+    if (remote && url) {
+      this.queueGeneratedVideoCache(status, pet.deviceId);
+    }
   },
 
   handleStatusChange(e) {
@@ -587,6 +600,7 @@ Page({
           this._videoLoadId = (this._videoLoadId || 0) + 1;
           const streamUrl = getBackendVideoStreamUrl(state);
           this.applyVideoSrc(streamUrl, this._videoLoadId, state, { remote: true });
+          this.queueGeneratedVideoCache(state, pet.deviceId);
           wx.showToast({ title: '视频已生成', icon: 'none' });
         }
       } else if (status === 'succeeded' && !task.video_ready) {
