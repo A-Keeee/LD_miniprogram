@@ -25,6 +25,50 @@ import {
 
 const app = getApp();
 
+const getMiniProgramInfo = () => {
+  try {
+    const accountInfo = wx.getAccountInfoSync();
+    const miniProgram = accountInfo && accountInfo.miniProgram;
+    return miniProgram || {};
+  } catch (e) {
+    return {};
+  }
+};
+
+const getMiniProgramEnvVersion = () => getMiniProgramInfo().envVersion || 'unknown';
+
+const getSystemInfo = () => {
+  try {
+    return wx.getSystemInfoSync();
+  } catch (e) {
+    return {};
+  }
+};
+
+const getCacheDownloadOrigin = () => {
+  const base = String(cloudConfig.localBackendBaseUrl || '').trim();
+  const match = /^https?:\/\/[^/]+/i.exec(base);
+  return match ? match[0] : (base || '未配置');
+};
+
+const getRawVideoCacheError = (err) => {
+  if (!err) {
+    return '';
+  }
+  if (typeof err === 'string') {
+    return err;
+  }
+  const parts = [];
+  const msg = err.message || err.errMsg;
+  const rawMsg = err.raw && err.raw.errMsg;
+  if (msg) parts.push(msg);
+  if (rawMsg && rawMsg !== msg) parts.push(rawMsg);
+  if (err.statusCode) parts.push(`statusCode=${err.statusCode}`);
+  if (err.errno) parts.push(`errno=${err.errno}`);
+  if (err.url) parts.push(`url=${err.url}`);
+  return parts.join('\n') || String(err);
+};
+
 Page({
   data: {
     pet: null,
@@ -82,6 +126,7 @@ Page({
   // Track retry state (not in data to avoid extra renders)
   _retryAttempt: 0,
   _videoLoadId: 0,
+  _videoCacheErrorModalShown: false,
 
   async onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
@@ -339,13 +384,50 @@ Page({
     apply();
   },
 
+  showTrialVideoCacheError(status, err) {
+    if (this._videoCacheErrorModalShown || getMiniProgramEnvVersion() !== 'trial') {
+      return;
+    }
+    this._videoCacheErrorModalShown = true;
+    const config = (this.data.statusConfig || {})[status] || {};
+    const label = config.label || status || '当前状态';
+    const miniProgram = getMiniProgramInfo();
+    const systemInfo = getSystemInfo();
+    const content = [
+      `状态：${label}`,
+      '环境：体验版',
+      `AppID：${miniProgram.appId || 'unknown'}`,
+      miniProgram.version ? `小程序版本：${miniProgram.version}` : '',
+      `基础库：${systemInfo.SDKVersion || 'unknown'}`,
+      `接口域名：${getCacheDownloadOrigin()}`,
+      '请确认该域名已配置到小程序后台 downloadFile 合法域名，并且 HTTPS 证书、ICP备案有效。',
+      `原始错误：${getRawVideoCacheError(err) || '无'}`,
+    ].filter(Boolean).join('\n');
+    wx.showModal({
+      title: '视频缓存失败',
+      content,
+      cancelText: '知道了',
+      confirmText: '复制错误',
+      success: (res) => {
+        if (res.confirm) {
+          wx.setClipboardData({ data: content });
+        }
+      },
+    });
+  },
+
   queueGeneratedVideoCache(status, deviceId) {
     cacheGeneratedVideoForState(status, { deviceId }).catch((err) => {
-      const msg = String((err && (err.message || err.errMsg)) || '');
+      const msg = [
+        err && err.message,
+        err && err.errMsg,
+        err && err.raw && err.raw.errMsg,
+      ].filter(Boolean).join(' ');
       if (msg === 'download_canceled' || msg.includes('abort')) {
         return;
       }
       console.warn('[Video] cache generated video failed', status, err);
+      this.showTrialVideoCacheError(status, err);
     });
   },
 

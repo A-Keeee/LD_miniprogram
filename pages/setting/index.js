@@ -15,6 +15,7 @@ import {
   setActiveDevice,
   unbindDevice,
 } from '../../utils/services/deviceService.js';
+import { cloudConfig } from '../../config/index.js';
 
 const app = getApp();
 
@@ -36,6 +37,56 @@ const STATUS_LABELS = {
   [PetStatus.GROOMING]: '梳理',
   [PetStatus.SHAKING]: '抖动身体',
   [PetStatus.LITTER_BOX]: '上厕所',
+};
+
+const ENV_LABELS = {
+  develop: '开发版',
+  trial: '体验版',
+  release: '正式版',
+};
+
+const getMiniProgramInfo = () => {
+  try {
+    const accountInfo = wx.getAccountInfoSync();
+    const miniProgram = accountInfo && accountInfo.miniProgram;
+    return miniProgram || {};
+  } catch (e) {
+    return {};
+  }
+};
+
+const getMiniProgramEnvVersion = () => getMiniProgramInfo().envVersion || 'unknown';
+
+const getSystemInfo = () => {
+  try {
+    return wx.getSystemInfoSync();
+  } catch (e) {
+    return {};
+  }
+};
+
+const getCacheDownloadOrigin = () => {
+  const base = String(cloudConfig.localBackendBaseUrl || '').trim();
+  const match = /^https?:\/\/[^/]+/i.exec(base);
+  return match ? match[0] : (base || '未配置');
+};
+
+const getRawVideoCacheError = (err) => {
+  if (!err) {
+    return '';
+  }
+  if (typeof err === 'string') {
+    return err;
+  }
+  const parts = [];
+  const msg = err.message || err.errMsg;
+  const rawMsg = err.raw && err.raw.errMsg;
+  if (msg) parts.push(msg);
+  if (rawMsg && rawMsg !== msg) parts.push(rawMsg);
+  if (err.statusCode) parts.push(`statusCode=${err.statusCode}`);
+  if (err.errno) parts.push(`errno=${err.errno}`);
+  if (err.url) parts.push(`url=${err.url}`);
+  return parts.join('\n') || String(err);
 };
 
 function fileToDataUrl(tempPath) {
@@ -162,7 +213,19 @@ Page({
   },
 
   getVideoCacheErrorMessage(err) {
-    const msg = String((err && (err.message || err.errMsg)) || '');
+    const msg = [
+      err && err.message,
+      err && err.errMsg,
+      err && err.raw && err.raw.errMsg,
+    ].filter(Boolean).join(' ');
+    const lower = msg.toLowerCase();
+    if (lower.includes('domain list') || lower.includes('url not in domain')) {
+      return '下载域名未加入 downloadFile 合法域名';
+    }
+    if (lower.includes('ssl') || lower.includes('tls') || lower.includes('certificate')) {
+      return 'HTTPS/TLS 证书校验失败';
+    }
+    if (lower.includes('timeout')) return '下载超时';
     if (msg.includes('missing_cache_context')) return '请先登录并绑定设备';
     if (msg.includes('download_status_401')) return '登录已过期，请重新登录';
     if (msg.includes('download_status_403')) return '当前账号无权缓存该设备视频';
@@ -170,6 +233,41 @@ Page({
     if (msg.includes('download_status_')) return '云端视频暂不可下载';
     if (msg.includes('cache_dir_unavailable')) return '本地缓存目录不可用';
     return '缓存失败，请稍后重试';
+  },
+
+  showVideoCacheErrorDialog(err, options = {}) {
+    const message = this.getVideoCacheErrorMessage(err);
+    const miniProgram = getMiniProgramInfo();
+    const envVersion = miniProgram.envVersion || 'unknown';
+    if (envVersion !== 'trial') {
+      wx.showToast({ title: options.toastTitle || message, icon: 'none' });
+      return;
+    }
+    const systemInfo = getSystemInfo();
+
+    const content = [
+      options.summary || `原因：${message}`,
+      options.label ? `状态：${options.label}` : '',
+      `环境：${ENV_LABELS[envVersion] || envVersion}`,
+      `AppID：${miniProgram.appId || 'unknown'}`,
+      miniProgram.version ? `小程序版本：${miniProgram.version}` : '',
+      `基础库：${systemInfo.SDKVersion || 'unknown'}`,
+      `接口域名：${getCacheDownloadOrigin()}`,
+      '请确认该域名已配置到小程序后台 downloadFile 合法域名，并且 HTTPS 证书、ICP备案有效。',
+      `原始错误：${getRawVideoCacheError(err) || '无'}`,
+    ].filter(Boolean).join('\n');
+
+    wx.showModal({
+      title: options.title || '视频缓存失败',
+      content,
+      cancelText: '知道了',
+      confirmText: '复制错误',
+      success: (res) => {
+        if (res.confirm) {
+          wx.setClipboardData({ data: content });
+        }
+      },
+    });
   },
 
   async handleCacheVideo(e) {
@@ -194,7 +292,7 @@ Page({
       this.refreshVideoCacheStatus(activeDeviceId);
       wx.showToast({ title: `${label}已缓存`, icon: 'success' });
     } catch (err) {
-      wx.showToast({ title: this.getVideoCacheErrorMessage(err), icon: 'none' });
+      this.showVideoCacheErrorDialog(err, { label });
     } finally {
       this.setData({ cachingVideoState: '' });
       this.refreshVideoCacheStatus(activeDeviceId);
@@ -220,7 +318,7 @@ Page({
     }
 
     let successCount = 0;
-    let failedCount = 0;
+    const failedItems = [];
     this.setData({ isCachingAllVideos: true });
     wx.showLoading({ title: `缓存 1/${states.length}`, mask: true });
 
@@ -231,7 +329,10 @@ Page({
         await cacheGeneratedVideoForState(state, { deviceId: activeDeviceId });
         successCount += 1;
       } catch (err) {
-        failedCount += 1;
+        failedItems.push({
+          err,
+          label: STATUS_LABELS[state] || state,
+        });
         console.warn('[Setting] cache generated video failed', state, err);
       }
       this.refreshVideoCacheStatus(activeDeviceId);
@@ -244,13 +345,21 @@ Page({
     });
     this.refreshVideoCacheStatus(activeDeviceId);
 
-    if (failedCount > 0 && successCount > 0) {
-      wx.showToast({ title: '部分缓存失败', icon: 'none' });
-    } else if (failedCount > 0) {
-      wx.showToast({ title: '缓存失败', icon: 'none' });
-    } else {
-      wx.showToast({ title: '缓存完成', icon: 'success' });
+    if (failedItems.length > 0) {
+      const firstFailure = failedItems[0];
+      const allFailed = failedItems.length === states.length;
+      this.showVideoCacheErrorDialog(firstFailure.err, {
+        title: allFailed ? '视频缓存失败' : '部分视频缓存失败',
+        toastTitle: allFailed ? '缓存失败' : '部分缓存失败',
+        label: firstFailure.label,
+        summary: successCount > 0
+          ? `已成功 ${successCount} 个，失败 ${failedItems.length} 个。首个失败如下：`
+          : `失败 ${failedItems.length} 个。首个失败如下：`,
+      });
+      return;
     }
+
+    wx.showToast({ title: '缓存完成', icon: 'success' });
   },
 
   onPairingCodeInput(e) {

@@ -321,6 +321,8 @@ const getAuthDownloadHeader = () => {
   return header;
 };
 
+const createDownloadError = (message, detail = {}) => Object.assign(new Error(message), detail);
+
 const getBackendVideoFileUrl = (state, deviceId) => {
   const base = (cloudConfig.localBackendBaseUrl || '').replace(/\/$/, '');
   const s = encodeURIComponent(String(state || '').trim());
@@ -622,6 +624,7 @@ export const cacheGeneratedVideoForState = (state, options = {}) => {
   }
   removeLocalFile(filePath);
 
+  const downloadUrl = getBackendVideoFileUrl(s, deviceId);
   const taskState = {
     canceled: false,
     downloadTask: null,
@@ -637,22 +640,35 @@ export const cacheGeneratedVideoForState = (state, options = {}) => {
 
     try {
       taskState.downloadTask = wx.downloadFile({
-        url: getBackendVideoFileUrl(s, deviceId),
+        url: downloadUrl,
         header: getAuthDownloadHeader(),
         filePath,
         success: (res) => {
           if (taskState.canceled) {
-            failDownload(new Error('download_canceled'));
+            failDownload(createDownloadError('download_canceled', {
+              deviceId,
+              state: s,
+              url: downloadUrl,
+            }));
             return;
           }
           if (res.statusCode !== 200) {
-            failDownload(new Error(`download_status_${res.statusCode}`));
+            failDownload(createDownloadError(`download_status_${res.statusCode}`, {
+              deviceId,
+              state: s,
+              statusCode: res.statusCode,
+              url: downloadUrl,
+            }));
             return;
           }
 
           const savedPath = verifyLocalVideoFile(res.filePath || filePath);
           if (!savedPath) {
-            failDownload(new Error('download_file_missing'));
+            failDownload(createDownloadError('download_file_missing', {
+              deviceId,
+              state: s,
+              url: downloadUrl,
+            }));
             return;
           }
 
@@ -661,7 +677,14 @@ export const cacheGeneratedVideoForState = (state, options = {}) => {
           resolve(savedPath);
         },
         fail: (err) => {
-          failDownload(err);
+          failDownload(createDownloadError('download_failed', {
+            deviceId,
+            state: s,
+            errMsg: err && err.errMsg,
+            errno: err && err.errno,
+            raw: err,
+            url: downloadUrl,
+          }));
         },
         complete: () => {
           if (generatedVideoDownloadTasks[memKey] === taskState) {
