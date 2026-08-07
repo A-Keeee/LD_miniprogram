@@ -31,6 +31,7 @@ import {
 } from '../../utils/services/eventService.js';
 import { getLocalChatReply, getStatusMeta, getStatusThought } from '../../utils/services/narrativeService.js';
 import { earn, getBalance } from '../../utils/services/pointsService.js';
+import { startAutoScenario, stopAutoScenario } from '../../utils/services/demoScenarioService.js';
 
 const app = getApp();
 
@@ -163,7 +164,12 @@ Page({
         devices: [],
         activeDeviceId: '',
         activeDeviceName: '',
-      }, () => this.refreshExperienceState());
+      }, () => {
+        this.refreshExperienceState();
+        startAutoScenario(({ pet }) => {
+          this.setData({ pet }, () => this.refreshExperienceState());
+        });
+      });
       return;
     }
 
@@ -315,11 +321,13 @@ Page({
   },
 
   onHide() {
+    stopAutoScenario();
     this.stopLocalStatusPolling();
     this.stopVideoTaskPolling();
   },
 
   onUnload() {
+    stopAutoScenario();
     this.stopLocalStatusPolling();
     this.stopVideoTaskPolling();
   },
@@ -792,7 +800,7 @@ Page({
   },
 
   openJournal() {
-    wx.switchTab({ url: '/pages/journal/index' });
+    wx.navigateTo({ url: '/pages/journal/index' });
   },
 
   toggleChat() {

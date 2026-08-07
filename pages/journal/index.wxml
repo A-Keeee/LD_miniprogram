@@ -1,0 +1,17 @@
+<view class="journal-page">
+  <view class="journal-hero"><view class="date">{{dateText}}</view><view class="title">汤圆的今天</view><view class="mood">{{view.moodLabel}} · {{view.events.length}} 个瞬间</view></view>
+  <view class="chart-card">
+    <view class="card-heading"><text>心情变化</text><text class="score">{{view.moodScore}}</text></view>
+    <view class="mood-chart">
+      <view class="guide guide-a"></view><view class="guide guide-b"></view>
+      <view wx:for="{{view.chartEvents}}" wx:key="id" class="chart-point" style="left:{{item.left}}%;top:{{item.top}}%;"><view class="dot"></view><text class="point-time">{{item.timeText}}</text></view>
+    </view>
+  </view>
+  <view class="dream-card" bindtap="openDream"><view><view class="dream-kicker">昨夜 / 午睡梦境</view><view class="dream-title">{{view.hasDream ? '阳光落进了梦里' : '还没有梦境'}}</view></view><text class="dream-icon">☾</text></view>
+  <view class="timeline-card"><view class="card-heading">第一视角时间线</view><view wx:if="{{view.events.length === 0}}" class="empty">今天还很安静，稍后再来看看。</view><view wx:for="{{view.events}}" wx:key="id" class="timeline-item"><view class="timeline-icon">{{item.icon}}</view><view class="timeline-body"><view class="timeline-meta"><text>{{item.timeText}} · {{item.title}}</text><text class="source">{{item.source === 'backend' ? '真实状态' : '数字记录'}}</text></view><view class="timeline-thought">“{{item.thought}}”</view></view></view></view>
+  <button class="journal-button" bindtap="generateJournal">生成今天的猫咪手帐</button>
+  <view wx:if="{{journal}}" class="saved-link" bindtap="openJournal">查看已生成手帐 →</view>
+</view>
+<view class="sheet-mask" wx:if="{{showDream || showJournal}}" bindtap="closeOverlay"></view>
+<view class="story-sheet" wx:if="{{showDream}}"><view class="sheet-kicker">汤圆的梦</view><view class="sheet-title">阳光落进了梦里</view><view class="story-text">{{dreamStory}}</view><button bindtap="closeDream">收好这个梦</button></view>
+<view class="story-sheet" wx:if="{{showJournal}}"><view class="sheet-kicker">今日手帐</view><view class="sheet-title">汤圆今天过得怎么样</view><view class="journal-text">{{journal.content}}</view><button bindtap="closeJournal">收进手帐</button></view>

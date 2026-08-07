@@ -3,6 +3,7 @@
     "pages/login/login",
     "pages/register/register",
     "pages/home/index",
+    "pages/journal/index",
     "pages/social/index",
     "pages/setting/index"
   ],
