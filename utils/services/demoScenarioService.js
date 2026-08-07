@@ -12,11 +12,12 @@ export const DEMO_SCENES = [
 
 let autoTimer = null;
 
-export const getScenarioSettings = () => getExperienceValue(
-  'settings',
-  { scenarioMode: 'manual' },
-  { demo: true },
-);
+export const getScenarioSettings = () => {
+  const settings = getExperienceValue('settings', { scenarioMode: 'manual' }, { demo: true });
+  return settings && typeof settings === 'object'
+    ? settings
+    : { scenarioMode: 'manual' };
+};
 
 export const setScenarioMode = (scenarioMode) => {
   const settings = getScenarioSettings();
@@ -53,4 +54,3 @@ export const startAutoScenario = (onAdvance) => {
     if (result && typeof onAdvance === 'function') onAdvance(result);
   }, 15000);
 };
-

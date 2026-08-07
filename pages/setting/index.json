@@ -1,6 +1,9 @@
 {
-  "navigationBarTitleText": "设置",
+  "navigationBarTitleText": "我的",
   "usingComponents": {
-    "t-icon": "tdesign-miniprogram/icon/icon"
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "task-card": "/components/task-card/index",
+    "friend-card": "/components/friend-card/index",
+    "postcard-card": "/components/postcard-card/index"
   }
 }

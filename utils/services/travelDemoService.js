@@ -25,9 +25,18 @@ export const DESTINATIONS = [
 
 const getDestination = (id) => DESTINATIONS.find((item) => item.id === id);
 
-export const getTravelSession = () => getExperienceValue('travel', null);
-export const getPostcards = () => getExperienceValue('postcards', []);
-export const getSouvenirs = () => getExperienceValue('souvenirs', []);
+export const getTravelSession = () => {
+  const session = getExperienceValue('travel', null);
+  return session && typeof session === 'object' && !Array.isArray(session) ? session : null;
+};
+export const getPostcards = () => {
+  const postcards = getExperienceValue('postcards', []);
+  return Array.isArray(postcards) ? postcards : [];
+};
+export const getSouvenirs = () => {
+  const souvenirs = getExperienceValue('souvenirs', []);
+  return Array.isArray(souvenirs) ? souvenirs : [];
+};
 
 const completeSession = (session, destination) => {
   const postcardId = `postcard_${session.id}`;

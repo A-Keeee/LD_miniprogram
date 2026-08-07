@@ -73,13 +73,18 @@ export const setExperienceValue = (domain, value, options) => (
   safeSet(getExperienceKey(domain, options), value)
 );
 
-export const getDemoPet = () => getExperienceValue('pet', null, { demo: true });
+const asArray = (value) => (Array.isArray(value) ? value : []);
+
+export const getDemoPet = () => {
+  const pet = getExperienceValue('pet', null, { demo: true });
+  return pet && typeof pet === 'object' && !Array.isArray(pet) ? pet : null;
+};
 export const saveDemoPet = (pet) => setExperienceValue('pet', pet, { demo: true });
-export const getEvents = () => getExperienceValue('events', []);
+export const getEvents = () => asArray(getExperienceValue('events', []));
 export const saveEvents = (events) => setExperienceValue('events', events);
-export const getTasks = () => getExperienceValue('tasks', []);
+export const getTasks = () => asArray(getExperienceValue('tasks', []));
 export const saveTasks = (tasks) => setExperienceValue('tasks', tasks);
-export const getFriends = () => getExperienceValue('friends', []);
+export const getFriends = () => asArray(getExperienceValue('friends', []));
 export const saveFriends = (friends) => setExperienceValue('friends', friends);
 export const getTravelSession = () => getExperienceValue('travel', null);
 export const saveTravelSession = (session) => setExperienceValue('travel', session);

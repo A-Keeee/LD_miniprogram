@@ -5,7 +5,7 @@ import {
   listDevices,
   syncPetFromDevice,
 } from '../../utils/services/deviceService.js';
-import { enterDemoMode } from '../../utils/services/demoService.js';
+import { enterDemoMode, isDemoEnabled } from '../../utils/services/demoService.js';
 
 Page({
   data: {
@@ -14,6 +14,10 @@ Page({
     isPhoneNumber: false,
     isCheck: false,
     isSubmit: false,
+  },
+
+  onShow() {
+    if (isDemoEnabled()) wx.reLaunch({ url: '/pages/home/index' });
   },
 
   changeSubmit() {

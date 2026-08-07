@@ -11,14 +11,24 @@ Component({
         label: '陪伴',
       },
       {
-        icon: 'usergroup',
-        value: 'social',
-        label: '宠圈',
+        icon: 'book-open',
+        value: 'journal',
+        label: '手帐',
       },
       {
-        icon: 'setting',
+        icon: 'usergroup',
+        value: 'social',
+        label: '猫友',
+      },
+      {
+        icon: 'compass',
+        value: 'travel',
+        label: '旅行',
+      },
+      {
+        icon: 'user',
         value: 'setting',
-        label: '设置',
+        label: '我的',
       },
     ],
   },
@@ -41,6 +51,6 @@ Component({
     handleChange(e) {
       const { value } = e.detail;
       wx.switchTab({ url: `/pages/${value}/index` });
-    }
+    },
   },
 });

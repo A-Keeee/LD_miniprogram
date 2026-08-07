@@ -1,7 +1,10 @@
 import { getExperienceValue, setExperienceValue } from './demoStore.js';
 
 export const getBalance = () => Number(getExperienceValue('points', 0)) || 0;
-export const getLedger = () => getExperienceValue('ledger', []);
+export const getLedger = () => {
+  const ledger = getExperienceValue('ledger', []);
+  return Array.isArray(ledger) ? ledger : [];
+};
 export const hasLedgerKey = (key) => getLedger().some((entry) => entry.key === key);
 
 export const earn = ({ key, amount, reason }) => {
@@ -31,4 +34,3 @@ export const grantDemoCredits = () => earn({
   amount: 100,
   reason: 'Demo 体验积分',
 });
-

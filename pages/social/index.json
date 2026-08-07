@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "宠圈",
+  "navigationBarTitleText": "猫友",
   "usingComponents": {
     "t-icon": "tdesign-miniprogram/icon/icon",
     "friend-card": "/components/friend-card/index"

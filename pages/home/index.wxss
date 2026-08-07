@@ -22,10 +22,8 @@ page { background: #f7f4ee; color: #211b18; }
 .mood-pill { position: absolute; left: 24rpx; bottom: 24rpx; padding: 14rpx 20rpx; border-radius: 999rpx; background: rgba(255,255,255,.9); font-size: 25rpx; font-weight: 600; }
 .heart-pop { position: absolute; top: 44%; left: 50%; color: #ff6b7d; font-size: 90rpx; animation: heart-pop .8s ease both; }
 @keyframes heart-pop { 0% { opacity: 0; transform: translate(-50%, 20rpx) scale(.3); } 35% { opacity: 1; transform: translate(-50%, -10rpx) scale(1.15); } 100% { opacity: 0; transform: translate(-50%, -100rpx) scale(.8); } }
-.thought-card, .today-card { margin-top: 24rpx; padding: 28rpx; border-radius: 30rpx; background: #fff; box-shadow: 0 12rpx 40rpx rgba(77,54,40,.06); }
-.thought-card { background: linear-gradient(135deg, #fff 0%, #fff5eb 100%); }
-.thought-kicker { color: #e66c18; font-size: 22rpx; font-weight: 700; letter-spacing: 2rpx; }
-.thought-text { margin-top: 12rpx; color: #392f2b; font-size: 31rpx; line-height: 1.65; font-weight: 550; }
+.home-thought { display: block; margin-top: 24rpx; }
+.today-card { margin-top: 24rpx; padding: 28rpx; border-radius: 30rpx; background: #fff; box-shadow: 0 12rpx 40rpx rgba(77,54,40,.06); }
 .quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14rpx; margin-top: 20rpx; }
 .quick-action { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 126rpx; margin: 0; padding: 0; border: 0; border-radius: 26rpx; background: #fff; color: #574b45; font-size: 23rpx; line-height: 1.2; box-shadow: 0 10rpx 28rpx rgba(77,54,40,.05); }
 .quick-action::after { border: 0; }

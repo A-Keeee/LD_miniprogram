@@ -17,8 +17,19 @@
 | **状态徽章** | 根据当前状态（等待、睡觉、行走、吃饭、梳理、抖动身体）显示 Emoji 与标签。 |
 | **传感器框** | 电池 % 与温度 ℃ 的实时读数展示。 |
 | **AI 聊天** | 基于 Gemini 的宠物对话弹层，支持发送/接收消息。 |
-| **宠圈** | 社交动态页（当前为静态演示数据）。 |
-| **主题** | 暗色玻璃拟态风格，渐变高光与流畅微交互。 |
+| **本地互动体验** | 手帐、任务积分、猫友碰一碰、数字旅行和电子猫包。 |
+| **主题** | 暖白与 LOXI 橙的消费级宠物陪伴风格。 |
+
+## ✨ 无后端 Demo Mode
+
+不启动 `LD_backend` 也可以完成完整演示：
+
+1. 打开登录页，点击 **「先体验 Demo →」**。
+2. 在陪伴页摸摸汤圆、进入电子猫包或与它聊天。
+3. 从底部 Tab 依次体验手帐、猫友、旅行和我的资产。
+4. 在 **我的 → Demo 控制台** 手动推进下一幕或开启每 15 秒自动剧情。
+
+Demo 数据只保存在小程序本地，并与真实账号、设备和视频缓存隔离。关闭 Demo Mode 后，已有真实后端链路继续按原接口工作。
 
 ---
 
@@ -28,7 +39,7 @@
 
 1. **Node ≥ 14**（用于 npm 依赖安装）
 2. **微信开发者工具**（最新版）
-3. **LD_backend** 已启动（默认 `http://127.0.0.1:5000`）
+3. **LD_backend**（可选，仅真实登录、设备与视频链路需要）
 
 ### 安装步骤
 
@@ -60,9 +71,9 @@ export const cloudConfig = {
 
 ### 本地运行
 
-1. 启动 **LD_backend** 服务。
-2. 打开 **微信开发者工具**，点击 **「编译」→「预览」**。
-3. 首次使用：注册账号 → 在 **设置** 页输入配对码并创建宠物 → 返回 **陪伴** 页查看仪表盘。
+1. 打开 **微信开发者工具**，点击 **「编译」→「预览」**。
+2. 无后端演示：登录页点击 **「先体验 Demo」**。
+3. 真实链路：启动 **LD_backend**，注册/登录后在 **我的** 页绑定设备。
 
 ---
 
@@ -79,10 +90,13 @@ export const cloudConfig = {
 ├─ pages/
 │   ├─ login/                     # 登录页
 │   ├─ register/                  # 注册页
-│   ├─ home/                      # ★ 主仪表盘（视频、状态、聊天、云端同步）
-│   ├─ social/                    # 宠圈（演示数据）
-│   └─ setting/                   # 设备配对、视频提供商设置
-├─ custom-tab-bar/                # 自定义底部导航（陪伴 / 宠圈 / 设置）
+│   ├─ home/                      # 陪伴首页（视频、状态、想法、聊天）
+│   ├─ journal/                   # 事件时间线、情绪、梦境与手帐
+│   ├─ social/                    # 猫友匹配与收藏
+│   ├─ travel/                    # 数字旅行、明信片与特产
+│   ├─ petbag/                    # 手机传感器互动
+│   └─ setting/                   # 我的、Demo 控制台与开发工具
+├─ custom-tab-bar/                # 陪伴 / 手帐 / 猫友 / 旅行 / 我的
 ├─ components/                    # 可复用组件（nav、card 等）
 ├─ utils/
 │   ├─ types.js                   # PetStatus、VideoProvider 枚举
@@ -100,9 +114,11 @@ export const cloudConfig = {
 |------|------|------|
 | 登录 | `pages/login/login` | 入口页，未登录自动跳转 |
 | 注册 | `pages/register/register` | 手机号注册 |
-| 陪伴 | `pages/home/index` | Tab 首页，需已绑定设备 |
-| 宠圈 | `pages/social/index` | Tab 社交页 |
-| 设置 | `pages/setting/index` | Tab 设置页，设备管理与视频配置 |
+| 陪伴 | `pages/home/index` | 状态、想法、互动与聊天 |
+| 手帐 | `pages/journal/index` | 情绪、事件、梦境与每日手帐 |
+| 猫友 | `pages/social/index` | 碰一碰、匹配与好友卡 |
+| 旅行 | `pages/travel/index` | 世界副本、明信片与数字特产 |
+| 我的 | `pages/setting/index` | 资产、任务、设备与开发工具 |
 
 ### 关键服务
 
@@ -154,7 +170,7 @@ export const cloudConfig = {
 
 ### 3. 云端实时同步
 
-开启首页「云端同步」开关后，按 `statusPollIntervalMs` 间隔请求：
+在 **我的 → Demo / 开发工具** 开启「云端状态同步」后，Home 可见时按 `statusPollIntervalMs` 间隔请求：
 
 ```
 GET /api/pet/status?device_id=<active_device_id>

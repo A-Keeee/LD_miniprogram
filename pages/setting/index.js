@@ -1,6 +1,8 @@
 import { PetStatus, VideoProvider } from '../../utils/types.js';
 import {
   cacheGeneratedVideoForState,
+  createStatusVideoTask,
+  filterStatesNeedingAiVideo,
   getGeneratedVideoCacheStatus,
   saveVideoSettings,
   setCurrentAccountPhone,
@@ -16,6 +18,25 @@ import {
   unbindDevice,
 } from '../../utils/services/deviceService.js';
 import { cloudConfig } from '../../config/index.js';
+import {
+  enterDemoMode,
+  isDemoEnabled,
+  leaveDemoMode,
+  resetDemoData,
+} from '../../utils/services/demoService.js';
+import {
+  getDemoPet,
+} from '../../utils/services/demoStore.js';
+import {
+  advanceDemoScene,
+  getScenarioSettings,
+  setScenarioMode,
+} from '../../utils/services/demoScenarioService.js';
+import { getBalance, getLedger } from '../../utils/services/pointsService.js';
+import { getSceneContext, getTaskList } from '../../utils/services/taskService.js';
+import { getFriendCards } from '../../utils/services/socialDemoService.js';
+import { getPostcards, getSouvenirs } from '../../utils/services/travelDemoService.js';
+import { recordPetStatusEvent } from '../../utils/services/eventService.js';
 
 const app = getApp();
 
@@ -130,6 +151,24 @@ Page({
     videoCacheEmptyText: '绑定设备后可查看本地视频缓存',
     cachingVideoState: '',
     isCachingAllVideos: false,
+    isDemo: false,
+    pet: null,
+    points: 0,
+    tasks: [],
+    friends: [],
+    postcards: [],
+    souvenirs: [],
+    ledger: [],
+    scenarioMode: 'manual',
+    devToolsOpen: false,
+    isLiveSync: false,
+    backendUrl: cloudConfig.localBackendBaseUrl,
+    statusList: CACHE_VIDEO_STATES.map((status) => ({ status, label: STATUS_LABELS[status] })),
+    isCreatingVideo: false,
+    showAssetSheet: false,
+    assetSheetTitle: '',
+    assetSheetType: '',
+    assetItems: [],
   },
 
   onShow() {
@@ -139,7 +178,154 @@ Page({
     if (app.globalData.videoSettings) {
       this.setData({ settings: app.globalData.videoSettings });
     }
+    this.refreshExperience();
     this.refreshDevices();
+  },
+
+  refreshExperience() {
+    const demo = isDemoEnabled();
+    const friends = getFriendCards().filter((friend) => friend.collected);
+    this.setData({
+      isDemo: demo,
+      pet: demo ? getDemoPet() : app.globalData.petProfile,
+      points: getBalance(),
+      tasks: getTaskList(),
+      friends,
+      postcards: getPostcards(),
+      souvenirs: getSouvenirs(),
+      ledger: getLedger(),
+      scenarioMode: getScenarioSettings().scenarioMode,
+      isLiveSync: Boolean(wx.getStorageSync('ld_dev_live_sync_enabled')),
+    });
+  },
+
+  handleDemoToggle(e) {
+    if (e.detail.value) {
+      enterDemoMode();
+      this.refreshExperience();
+      return;
+    }
+    this.exitDemo();
+  },
+
+  exitDemo() {
+    leaveDemoMode();
+    const target = wx.getStorageSync('access_token') ? '/pages/home/index' : '/pages/login/login';
+    wx.reLaunch({ url: target });
+  },
+
+  handleResetDemo() {
+    wx.showModal({
+      title: '重置演示数据',
+      content: '将清空 Demo 的剧情、任务、积分、猫友和旅行记录，不影响真实账号与设备。',
+      confirmText: '确认重置',
+      success: ({ confirm }) => {
+        if (!confirm) return;
+        const scene = getSceneContext();
+        if (scene && scene.imagePath) {
+          wx.removeSavedFile({ filePath: scene.imagePath });
+        }
+        resetDemoData();
+        this.refreshExperience();
+        wx.showToast({ title: 'Demo 已重置', icon: 'success' });
+      },
+    });
+  },
+
+  handleScenarioMode(e) {
+    const mode = e.detail.value ? 'auto' : 'manual';
+    setScenarioMode(mode);
+    this.setData({ scenarioMode: mode });
+  },
+
+  nextScene() {
+    const result = advanceDemoScene();
+    if (result) {
+      this.setData({ pet: result.pet });
+      wx.showToast({ title: `下一幕：${result.pet.statusLabel}`, icon: 'none' });
+    }
+  },
+
+  toggleDevTools() {
+    this.setData({ devToolsOpen: !this.data.devToolsOpen });
+  },
+
+  handleLiveSync(e) {
+    const enabled = Boolean(e.detail.value);
+    wx.setStorageSync('ld_dev_live_sync_enabled', enabled);
+    this.setData({ isLiveSync: enabled });
+  },
+
+  handleManualStatus(e) {
+    const { status } = e.currentTarget.dataset;
+    const pet = app.globalData.petProfile;
+    if (!pet || isDemoEnabled()) {
+      wx.showToast({ title: '手动真实状态仅用于已绑定设备', icon: 'none' });
+      return;
+    }
+    const updated = { ...pet, currentStatus: status };
+    app.updatePetProfile(updated);
+    recordPetStatusEvent({ status, source: 'manual', force: true });
+    this.setData({ pet: updated });
+  },
+
+  async createCurrentVideo() {
+    const pet = app.globalData.petProfile;
+    if (!pet || this.data.isCreatingVideo) {
+      wx.showToast({ title: '请先绑定真实设备', icon: 'none' });
+      return;
+    }
+    this.setData({ isCreatingVideo: true });
+    try {
+      await createStatusVideoTask(pet.currentStatus, { force: true });
+      wx.showToast({ title: '已提交重新创作', icon: 'none' });
+    } catch (error) {
+      wx.showToast({ title: '提交失败，请检查后端', icon: 'none' });
+    } finally {
+      this.setData({ isCreatingVideo: false });
+    }
+  },
+
+  async createAllVideos() {
+    if (this.data.isCreatingVideo) return;
+    this.setData({ isCreatingVideo: true });
+    try {
+      const states = await filterStatesNeedingAiVideo(CACHE_VIDEO_STATES);
+      await Promise.all(states.map((status) => createStatusVideoTask(status, { force: false })));
+      wx.showToast({ title: states.length ? '批量任务已提交' : '所有状态均已完成', icon: 'none' });
+    } catch (error) {
+      wx.showToast({ title: '批量提交失败', icon: 'none' });
+    } finally {
+      this.setData({ isCreatingVideo: false });
+    }
+  },
+
+  openAsset(e) {
+    const { type } = e.currentTarget.dataset;
+    const config = {
+      points: { title: '积分明细', items: this.data.ledger },
+      friends: { title: '好友卡', items: this.data.friends },
+      postcards: { title: '明信片', items: this.data.postcards },
+      souvenirs: { title: '数字特产', items: this.data.souvenirs },
+    }[type];
+    if (!config) return;
+    this.setData({
+      showAssetSheet: true,
+      assetSheetTitle: config.title,
+      assetSheetType: type,
+      assetItems: config.items,
+    });
+  },
+
+  closeAsset() {
+    this.setData({ showAssetSheet: false });
+  },
+
+  handleTaskSelect(e) {
+    const { task } = e.detail;
+    if (!task || task.completed) return;
+    if (task.type === 'friend') wx.switchTab({ url: '/pages/social/index' });
+    else wx.switchTab({ url: '/pages/home/index' });
   },
 
   async refreshDevices() {

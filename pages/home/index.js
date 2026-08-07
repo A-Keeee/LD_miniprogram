@@ -191,6 +191,7 @@ Page({
       return;
     }
 
+    this.setData({ isLiveSync: Boolean(wx.getStorageSync('ld_dev_live_sync_enabled')) });
     await this.refreshActiveDevice();
 
     const pet = app.globalData.petProfile;
@@ -815,7 +816,7 @@ Page({
   },
 
   openJournal() {
-    wx.navigateTo({ url: '/pages/journal/index' });
+    wx.switchTab({ url: '/pages/journal/index' });
   },
 
   handleTaskSelect(e) {

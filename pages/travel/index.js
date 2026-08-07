@@ -78,7 +78,9 @@ Page({
         success: ({ confirm }) => {
           if (!confirm) return;
           grantDemoCredits();
-          this.setData({ points: getBalance() });
+          startTravel(id);
+          this._shownSessionId = '';
+          this.refresh();
         },
       });
       return;
@@ -102,4 +104,3 @@ Page({
     };
   },
 });
-

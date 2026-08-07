@@ -30,10 +30,7 @@
     <view class="heart-pop" wx:if="{{isPetting}}">♥</view>
   </view>
 
-  <view class="thought-card">
-    <view class="thought-kicker">它在想</view>
-    <view class="thought-text">“{{thought}}”</view>
-  </view>
+  <thought-card class="home-thought" thought="{{thought}}" />
 
   <view class="quick-actions">
     <button class="quick-action primary" bindtap="openPetBag"><text class="action-emoji">🎒</text><text>装进猫包</text></button>

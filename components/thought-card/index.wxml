@@ -1,0 +1,1 @@
+<view class="thought-card"><view class="thought-kicker">它在想</view><view class="thought-text">“{{thought}}”</view></view>

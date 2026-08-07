@@ -28,12 +28,20 @@
         "text": "陪伴"
       },
       {
+        "pagePath": "pages/journal/index",
+        "text": "手帐"
+      },
+      {
         "pagePath": "pages/social/index",
-        "text": "宠圈"
+        "text": "猫友"
+      },
+      {
+        "pagePath": "pages/travel/index",
+        "text": "旅行"
       },
       {
         "pagePath": "pages/setting/index",
-        "text": "设置"
+        "text": "我的"
       }
     ]
   },

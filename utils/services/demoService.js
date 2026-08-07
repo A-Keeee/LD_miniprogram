@@ -1,6 +1,7 @@
 import { PetStatus } from '../types.js';
 import {
   DEMO_VERSION,
+  getDemoPet,
   getDemoVersion,
   isDemoEnabled,
   resetAllDemoData,
@@ -77,7 +78,7 @@ const createSeed = () => ({
 });
 
 export const seedDemoData = (options = {}) => {
-  if (!options.force && getDemoVersion() === DEMO_VERSION) return;
+  if (!options.force && getDemoVersion() === DEMO_VERSION && getDemoPet()) return;
   const seed = createSeed();
   saveDemoPet(seed.pet);
   setExperienceValue('events', seed.events, { demo: true });
@@ -109,4 +110,3 @@ export const resetDemoData = () => {
 };
 
 export { isDemoEnabled };
-

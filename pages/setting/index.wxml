@@ -1,229 +1,52 @@
-<view class="container">
-  <view class="card">
-    <view class="card-header">
-      <t-icon name="link" size="20px" color="#7e22ce" />
-      <text class="card-title">我的设备</text>
-    </view>
+<view class="my-page">
+  <view class="profile-card">
+    <image src="{{pet.baseImage || '/static/demo/tangyuan.jpg'}}" mode="aspectFill" class="profile-avatar"></image>
+    <view class="profile-main"><view class="profile-name">{{isDemo ? 'Demo 体验官' : (pet.name ? pet.name + '的家' : '我的宠伴')}}</view><view class="profile-pet">{{pet.name || '尚未绑定宠物'}} · {{isDemo ? '演示模式' : '真实模式'}}</view></view>
+    <view class="mode-badge {{isDemo ? 'demo' : ''}}">{{isDemo ? 'DEMO' : 'LIVE'}}</view>
+  </view>
 
-    <view class="form-group">
-      <view class="label">配对码</view>
-      <view class="pair-row">
-        <input
-          class="input-box no-icon pair-input"
-          placeholder="输入 6 位配对码"
-          maxlength="6"
-          value="{{pairingCode}}"
-          bindinput="onPairingCodeInput"
-        />
-        <button
-          class="pair-btn"
-          bindtap="handlePair"
-          disabled="{{isPairing || !pairingCode || !petName || !petImageDataUrl}}"
-          loading="{{isPairing}}"
-        >配对</button>
-      </view>
-    </view>
+  <view class="asset-grid">
+    <view class="asset-item" data-type="points" bindtap="openAsset"><text class="asset-value">{{points}}</text><text class="asset-label">积分</text></view>
+    <view class="asset-item" data-type="friends" bindtap="openAsset"><text class="asset-value">{{friends.length}}</text><text class="asset-label">好友卡</text></view>
+    <view class="asset-item" data-type="postcards" bindtap="openAsset"><text class="asset-value">{{postcards.length}}</text><text class="asset-label">明信片</text></view>
+    <view class="asset-item" data-type="souvenirs" bindtap="openAsset"><text class="asset-value">{{souvenirs.length}}</text><text class="asset-label">数字特产</text></view>
+  </view>
 
-    <view class="form-group">
-      <view class="label">宠物昵称</view>
-      <input
-        class="input-box no-icon"
-        placeholder="例如：糯米"
-        value="{{petName}}"
-        bindinput="onPetNameInput"
-      />
-    </view>
+  <view class="section"><view class="section-heading"><view><view class="section-title">今日任务</view><view class="section-desc">完成一点小事，累积陪伴能量</view></view></view><view class="task-list"><task-card wx:for="{{tasks}}" wx:key="id" task="{{item}}" bind:select="handleTaskSelect" /></view></view>
 
-    <view class="type-selector">
-      <view class="type-btn {{petType === 'cat' ? 'active' : ''}}" data-type="cat" bindtap="selectPetType">
-        <text class="emoji">🐱</text>
-        <text>猫咪</text>
-      </view>
-      <view class="type-btn {{petType === 'dog' ? 'active' : ''}}" data-type="dog" bindtap="selectPetType">
-        <text class="emoji">🐶</text>
-        <text>狗狗</text>
-      </view>
-    </view>
+  <view class="section demo-console">
+    <view class="section-heading"><view><view class="section-title">Demo 控制台</view><view class="section-desc">现场演示无需后端或设备</view></view><switch checked="{{isDemo}}" bindchange="handleDemoToggle" color="#ff8a34" /></view>
+    <view wx:if="{{isDemo}}" class="console-body"><view class="setting-row"><view><view class="row-title">自动剧情</view><view class="row-desc">每 15 秒切换一幕</view></view><switch checked="{{scenarioMode === 'auto'}}" bindchange="handleScenarioMode" color="#ff8a34" /></view><view class="console-actions"><button bindtap="nextScene">下一幕</button><button class="secondary" bindtap="handleResetDemo">重置 Demo</button></view></view>
+  </view>
 
-    <view class="form-group">
-      <view class="label">宠物照片（用于生成数字分身）</view>
-      <view class="upload-area" bindtap="choosePetImage">
-        <image wx:if="{{petImage}}" src="{{petImage}}" mode="aspectFill" class="preview-img"></image>
-        <view wx:else class="upload-placeholder">
-          <t-icon name="upload" size="32px" color="#9ca3af" />
-          <text>点击上传照片</text>
-        </view>
-      </view>
-    </view>
+  <view class="section" wx:if="{{!isDemo}}">
+    <view class="section-heading"><view><view class="section-title">设备与宠物</view><view class="section-desc">配对、切换和管理真实设备</view></view></view>
+    <view class="form-group"><view class="label">配对码</view><input class="input" placeholder="输入 6 位配对码" maxlength="6" value="{{pairingCode}}" bindinput="onPairingCodeInput" /></view>
+    <view class="form-group"><view class="label">宠物昵称</view><input class="input" placeholder="例如：糯米" value="{{petName}}" bindinput="onPetNameInput" /></view>
+    <view class="pet-type-row"><view class="pet-type {{petType === 'cat' ? 'active' : ''}}" data-type="cat" bindtap="selectPetType">🐱 猫咪</view><view class="pet-type {{petType === 'dog' ? 'active' : ''}}" data-type="dog" bindtap="selectPetType">🐶 狗狗</view></view>
+    <view class="upload" bindtap="choosePetImage"><image wx:if="{{petImage}}" src="{{petImage}}" mode="aspectFill"></image><view wx:else>＋ 选择宠物照片</view></view>
+    <button class="primary-button" bindtap="handlePair" loading="{{isPairing}}" disabled="{{isPairing || !pairingCode || !petName || !petImageDataUrl}}">绑定设备</button>
+    <view class="device-list" wx:if="{{devices.length}}"><view wx:for="{{devices}}" wx:key="device_id" class="device-item {{activeDeviceId === item.device_id ? 'active' : ''}}" data-id="{{item.device_id}}" bindtap="handleSelectDevice"><view><view class="device-name">{{item.pet_name || item.name || item.device_id}}</view><view class="device-meta">{{item.device_id}} · {{item.lastSeenText}}</view></view><view><text wx:if="{{activeDeviceId === item.device_id}}" class="active-tag">当前</text><text class="unbind" data-id="{{item.device_id}}" catchtap="handleUnbind">解绑</text></view></view></view>
+    <view class="empty" wx:elif="{{!isLoadingDevices}}">暂未绑定设备</view>
+  </view>
 
-    <view class="device-list" wx:if="{{devices.length > 0}}">
-      <view
-        wx:for="{{devices}}"
-        wx:key="device_id"
-        class="device-item {{activeDeviceId === item.device_id ? 'active' : ''}}"
-        data-id="{{item.device_id}}"
-        bindtap="handleSelectDevice"
-      >
-        <view class="device-main">
-          <view class="device-name">{{item.pet_name || item.name || item.device_id}}</view>
-          <view class="device-meta">{{item.device_id}} · 最后在线 {{item.lastSeenText}}</view>
-        </view>
-        <view class="device-actions">
-          <text wx:if="{{activeDeviceId === item.device_id}}" class="active-tag">当前</text>
-          <text
-            class="unbind-btn"
-            data-id="{{item.device_id}}"
-            catchtap="handleUnbind"
-          >解绑</text>
-        </view>
-      </view>
-    </view>
-
-    <view class="empty-devices" wx:elif="{{!isLoadingDevices}}">
-      暂无绑定设备，请先注册硬件/Mock 设备，输入配对码并创建宠物
+  <view class="section dev-section">
+    <view class="section-heading tap-row" bindtap="toggleDevTools"><view><view class="section-title">Demo / 开发工具</view><view class="section-desc">设备状态、视频与环境配置</view></view><text class="chevron">{{devToolsOpen ? '收起' : '展开'}}⌄</text></view>
+    <view wx:if="{{devToolsOpen}}" class="dev-body">
+      <view class="setting-row"><view><view class="row-title">云端状态同步</view><view class="row-desc">Home 可见时轮询真实 behaviour</view></view><switch checked="{{isLiveSync}}" bindchange="handleLiveSync" color="#ff8a34" disabled="{{isDemo}}" /></view>
+      <view class="dev-label">手动状态</view><view class="status-chips"><view wx:for="{{statusList}}" wx:key="status" class="status-chip {{pet.currentStatus === item.status ? 'active' : ''}}" data-status="{{item.status}}" bindtap="handleManualStatus">{{item.label}}</view></view>
+      <view class="console-actions"><button bindtap="createCurrentVideo" loading="{{isCreatingVideo}}" disabled="{{isDemo || isCreatingVideo}}">重新创作当前视频</button><button class="secondary" bindtap="createAllVideos" disabled="{{isDemo || isCreatingVideo}}">批量创作视频</button></view>
+      <view class="dev-label">视频 Provider</view><view class="provider-row"><view class="provider {{settings.provider === 'LOCAL' ? 'active' : ''}}" data-provider="LOCAL" bindtap="setProvider">本地预设</view><view class="provider {{settings.provider === 'KLING_AI' ? 'active' : ''}}" data-provider="KLING_AI" bindtap="setProvider">AI 生成</view></view>
+      <view class="form-group" wx:if="{{settings.provider === 'KLING_AI'}}"><view class="label">API Key</view><input class="input" password value="{{settings.apiKey}}" data-field="apiKey" bindinput="handleInput" /></view>
+      <button class="save-settings" bindtap="handleSave">{{saved ? '已保存' : '保存视频设置'}}</button>
+      <view class="dev-label">本地视频缓存 · {{videoCacheSummaryText}}</view><view class="cache-list"><view wx:for="{{videoCacheItems}}" wx:key="state" class="cache-item"><text>{{item.label}} · {{item.statusText}}</text><button wx:if="{{!item.cached}}" data-state="{{item.state}}" bindtap="handleCacheVideo" loading="{{cachingVideoState === item.state}}">缓存</button></view></view><button class="cache-all" bindtap="handleCacheAllVideos" disabled="{{!videoCacheItems.length || isCachingAllVideos}}">一键缓存全部</button>
+      <view class="backend-row"><text>Backend URL</text><text>{{backendUrl}}</text></view>
     </view>
   </view>
 
-  <view class="card">
-    <view class="card-header">
-      <t-icon name="server" size="20px" color="#7e22ce" />
-      <text class="card-title">视频内容设置</text>
-    </view>
-    
-    <view class="form-group">
-      <view class="label">提供商 (Provider)</view>
-      <view class="provider-options">
-        <view 
-          class="provider-btn {{settings.provider === 'LOCAL' ? 'active' : ''}}" 
-          data-provider="LOCAL" 
-          bindtap="setProvider"
-        >
-          <view class="p-title">本地预设 (Local)</view>
-          <view class="p-desc">使用预置/远程备链演示视频</view>
-        </view>
-        <view 
-          class="provider-btn {{settings.provider === 'KLING_AI' ? 'active' : ''}}" 
-          data-provider="KLING_AI" 
-          bindtap="setProvider"
-        >
-          <view class="p-title">AI 短视频生成</view>
-          <view class="p-desc">通过 AI 自动生成动态视频（未开放）</view>
-        </view>
-      </view>
-    </view>
-
-    <!-- API Settings section shown if KLING_AI -->
-    <view class="api-settings" wx:if="{{settings.provider === 'KLING_AI'}}">
-      <view class="form-group">
-        <view class="label">API Key</view>
-        <view class="input-wrap">
-          <t-icon name="lock-on" size="16px" color="#9ca3af" class="input-icon" />
-          <input 
-            class="input-box" 
-            password="{{true}}" 
-            placeholder="sk-..." 
-            value="{{settings.apiKey}}" 
-            data-field="apiKey"
-            bindinput="handleInput"
-          />
-        </view>
-      </view>
-      
-      <view class="form-group">
-        <view class="label">模型名称 (Model)</view>
-        <view class="input-wrap">
-          <t-icon name="app" size="16px" color="#9ca3af" class="input-icon" />
-          <input 
-            class="input-box" 
-            placeholder="例如: kling-v1" 
-            value="{{settings.modelName}}" 
-            data-field="modelName"
-            bindinput="handleInput"
-          />
-        </view>
-      </view>
-
-      <view class="form-group">
-        <view class="label">Endpoint (可选)</view>
-        <input 
-          class="input-box no-icon" 
-          placeholder="https://..." 
-          value="{{settings.apiEndpoint}}" 
-          data-field="apiEndpoint"
-          bindinput="handleInput"
-        />
-      </view>
-    </view>
-
-    <view class="cache-section">
-      <view class="cache-header">
-        <view class="cache-title-wrap">
-          <t-icon name="video-filled" size="18px" color="#7e22ce" />
-          <text class="cache-title">本地视频缓存</text>
-        </view>
-        <view class="cache-actions">
-          <text class="cache-summary">{{videoCacheSummaryText}}</text>
-          <button
-            class="cache-all-btn"
-            bindtap="handleCacheAllVideos"
-            loading="{{isCachingAllVideos}}"
-            disabled="{{videoCacheItems.length === 0 || videoCacheCachedCount === videoCacheTotal || isCachingAllVideos || cachingVideoState}}"
-          >一键缓存</button>
-        </view>
-      </view>
-
-      <view class="cache-list" wx:if="{{videoCacheItems.length > 0}}">
-        <view
-          wx:for="{{videoCacheItems}}"
-          wx:key="state"
-          class="cache-item"
-        >
-          <view class="cache-item-main">
-            <text class="cache-name">{{item.label}}</text>
-            <text class="cache-tag {{item.cached ? 'cached' : ''}}">{{item.statusText}}</text>
-          </view>
-          <button
-            wx:if="{{!item.cached}}"
-            class="cache-item-btn"
-            data-state="{{item.state}}"
-            catchtap="handleCacheVideo"
-            loading="{{cachingVideoState === item.state}}"
-            disabled="{{isCachingAllVideos || cachingVideoState}}"
-          >{{cachingVideoState === item.state ? '缓存中' : '缓存'}}</button>
-          <button
-            wx:else
-            class="cache-item-btn cached"
-            disabled="{{true}}"
-          >已完成</button>
-        </view>
-      </view>
-      <view class="cache-empty" wx:else>{{videoCacheEmptyText}}</view>
-    </view>
-  </view>
-  
-  <view class="info-box">
-    <t-icon name="info-circle" size="18px" color="#1d4ed8" />
-    <view class="info-text">
-      注：对话功能的 AI API 已在代码中作为内嵌设置，当前页面仅用于配置视频生成接口。
-    </view>
-  </view>
-  
-  <button class="save-btn {{saved ? 'saved' : ''}}" bindtap="handleSave">
-    <t-icon wx:if="{{!saved}}" name="save" size="20px" color="#ffffff" />
-    <text style="margin-left:8px;">{{saved ? '已保存!' : '保存设置'}}</text>
-  </button>
-
-  <view class="card account-card">
-    <view class="card-header">
-      <t-icon name="user" size="20px" color="#7e22ce" />
-      <text class="card-title">账号</text>
-    </view>
-    <view class="account-desc">退出后会清除登录状态和当前设备选择，本地视频缓存将保留。</view>
-    <button
-      class="logout-btn"
-      bindtap="handleLogout"
-      loading="{{isLoggingOut}}"
-      disabled="{{isLoggingOut}}"
-    >退出登录</button>
-  </view>
+  <button wx:if="{{isDemo}}" class="exit-button" bindtap="exitDemo">退出演示模式</button>
+  <button wx:else class="exit-button danger" bindtap="handleLogout" loading="{{isLoggingOut}}">退出登录</button>
 </view>
+
+<view class="asset-mask" wx:if="{{showAssetSheet}}" bindtap="closeAsset"></view>
+<view class="asset-sheet" wx:if="{{showAssetSheet}}"><view class="sheet-title">{{assetSheetTitle}}</view><view class="empty" wx:if="{{!assetItems.length}}">还没有收藏，去体验一下吧。</view><view wx:if="{{assetSheetType === 'points'}}" class="ledger-list"><view wx:for="{{assetItems}}" wx:key="id" class="ledger-row"><view><view>{{item.reason}}</view><view class="ledger-time">本地积分记录</view></view><text class="{{item.amount > 0 ? 'plus' : ''}}">{{item.amount > 0 ? '+' : ''}}{{item.amount}}</text></view></view><view wx:elif="{{assetSheetType === 'friends'}}" class="asset-cards"><friend-card wx:for="{{assetItems}}" wx:key="id" friend="{{item}}" /></view><view wx:elif="{{assetSheetType === 'postcards'}}" class="asset-cards postcard-assets"><postcard-card wx:for="{{assetItems}}" wx:key="id" postcard="{{item}}" /></view><view wx:else class="souvenir-assets"><view wx:for="{{assetItems}}" wx:key="id" class="souvenir-asset"><image src="{{item.image}}" mode="aspectFill"></image><text>{{item.name}}</text></view></view><button class="sheet-close" bindtap="closeAsset">关闭</button></view>

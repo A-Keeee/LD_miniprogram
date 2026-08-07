@@ -1,0 +1,1 @@
+.thought-card{padding:28rpx;border-radius:30rpx;background:linear-gradient(135deg,#fff 0%,#fff5eb 100%);box-shadow:0 12rpx 40rpx rgba(77,54,40,.06)}.thought-kicker{color:#e66c18;font-size:22rpx;font-weight:700;letter-spacing:2rpx}.thought-text{margin-top:12rpx;color:#392f2b;font-size:31rpx;line-height:1.65;font-weight:550}

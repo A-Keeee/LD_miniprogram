@@ -118,7 +118,12 @@ Page({
         success: ({ confirm }) => {
           if (!confirm) return;
           grantDemoCredits();
-          this.setData({ points: getBalance() });
+          const unlocked = unlockFriendStory(this.data.friend.id);
+          this.setData({
+            points: getBalance(),
+            friend: unlocked.friend || this.data.friend,
+            friends: getFriendCards(),
+          });
         },
       });
       return;

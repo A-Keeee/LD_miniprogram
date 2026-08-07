@@ -2,6 +2,7 @@
   "navigationBarTitleText": "宠伴",
   "usingComponents": {
     "t-icon": "tdesign-miniprogram/icon/icon",
-    "task-card": "/components/task-card/index"
+    "task-card": "/components/task-card/index",
+    "thought-card": "/components/thought-card/index"
   }
 }
