@@ -125,6 +125,8 @@ export async function pairDevice(pairingCode, pet) {
     pet_type: (pet && pet.pet_type) || 'cat',
   });
   const device = res.data;
+  // listDevices is declared below to keep exported operations grouped by purpose.
+  // eslint-disable-next-line no-use-before-define
   const devices = await listDevices();
   if (device && device.device_id) {
     setActiveDeviceId(device.device_id);
@@ -171,7 +173,9 @@ export async function unbindDevice(deviceId) {
       console.warn('[Device] clear pet_profile failed', e);
     }
   }
+  // eslint-disable-next-line no-use-before-define
   const devices = await listDevices();
+  // eslint-disable-next-line no-use-before-define
   const nextActive = getActiveDevice();
   if (nextActive) {
     syncPetFromDevice(nextActive);

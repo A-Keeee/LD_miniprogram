@@ -1,5 +1,4 @@
-export const chatWithPet = (pet, message) => {
-  return new Promise((resolve, reject) => {
+export const chatWithPet = (pet, message) => new Promise((resolve, reject) => {
     // 硬编码对话API Key
     const apiKey = 'AIzaSyA35U9NBFvexRJzDFilDgFLd61cEl-NKiE';
     
@@ -63,7 +62,7 @@ export const chatWithPet = (pet, message) => {
       },
       success: (res) => {
         if (res.data && res.data.candidates && res.data.candidates.length > 0) {
-          const text = res.data.candidates[0].content.parts[0].text;
+          const {text} = res.data.candidates[0].content.parts[0];
           resolve(text);
         } else {
           console.error('Gemini API Error:', res);
@@ -76,4 +75,3 @@ export const chatWithPet = (pet, message) => {
       }
     });
   });
-};

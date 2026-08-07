@@ -22,6 +22,8 @@ import {
   setActiveDevice,
   syncPetFromDevice,
 } from '../../utils/services/deviceService.js';
+import { isDemoEnabled, seedDemoData } from '../../utils/services/demoService.js';
+import { getDemoPet } from '../../utils/services/demoStore.js';
 
 const app = getApp();
 
@@ -131,6 +133,23 @@ Page({
   async onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ value: 'home' });
+    }
+
+    if (isDemoEnabled()) {
+      seedDemoData();
+      this.stopLocalStatusPolling();
+      this.stopVideoTaskPolling();
+      this.setData({
+        pet: getDemoPet(),
+        videoSrc: null,
+        videoError: false,
+        videoDisabled: false,
+        videoUnavailableReason: '',
+        devices: [],
+        activeDeviceId: '',
+        activeDeviceName: '',
+      });
+      return;
     }
 
     const token = wx.getStorageSync('access_token');
@@ -308,7 +327,7 @@ Page({
         }
         if (res.statusCode !== 200 || !res.data) return;
         const body = res.data;
-        const behaviour = body.behaviour;
+        const {behaviour} = body;
         if (!behaviour) return;
         const status = this.mapBehaviourToStatus(String(behaviour));
         if (!status || !this.data.pet || this.data.pet.currentStatus === status) return;
@@ -354,7 +373,7 @@ Page({
   },
 
   isVideoLoadCurrent(loadId, status) {
-    const pet = this.data.pet;
+    const {pet} = this.data;
     return loadId === this._videoLoadId && pet && pet.currentStatus === status;
   },
 
@@ -454,15 +473,12 @@ Page({
     const result = await getPetStatusVideo(pet, { allowPresetFallback });
 
     if (!this.isVideoLoadCurrent(loadId, status)) {
-      console.log('[Video] Ignored stale load for', status);
       return;
     }
 
     const url = result && result.url;
     const pending = Boolean(result && result.pending);
     const remote = Boolean(result && result.remote);
-    console.log('[Video] Resolved:', status, result && result.source, url, pending);
-
     if (pending) {
       const userInitiated = this.isVideoCreationBusy();
       this.setData({
@@ -531,7 +547,7 @@ Page({
   },
 
   beginVideoCreation(state, { force = false, loadingTitle = '开始创作…' } = {}) {
-    const pet = this.data.pet;
+    const {pet} = this.data;
     const status = String(state || (pet && pet.currentStatus) || '').trim();
     if (!pet || !status || this.isVideoCreationBusy()) {
       return Promise.reject(new Error('busy_or_missing_state'));
@@ -564,13 +580,13 @@ Page({
   },
 
   handleCreateVideo() {
-    const pet = this.data.pet;
+    const {pet} = this.data;
     if (!pet || !pet.currentStatus) return;
     this.beginVideoCreation(pet.currentStatus);
   },
 
   handleRecreateVideo() {
-    const pet = this.data.pet;
+    const {pet} = this.data;
     if (!pet || !pet.currentStatus) return;
     this.beginVideoCreation(pet.currentStatus, {
       force: true,
@@ -579,7 +595,7 @@ Page({
   },
 
   async handleCreateAllVideos() {
-    const pet = this.data.pet;
+    const {pet} = this.data;
     const states = this.data.statusList || [];
     if (!pet || !states.length || this.isVideoCreationBusy()) return;
 
@@ -613,17 +629,19 @@ Page({
     });
     wx.showLoading({ title: '全部创作中…', mask: true });
 
-    let started = 0;
-    let failed = 0;
-    for (const state of statesToCreate) {
-      try {
-        await createStatusVideoTask(state, { force: false });
-        started += 1;
-      } catch (err) {
-        failed += 1;
-        console.warn('[Video] batch create failed for', state, err);
-      }
-    }
+    const counts = await statesToCreate.reduce(
+      (promise, state) => promise.then(async (result) => {
+        try {
+          await createStatusVideoTask(state, { force: false });
+          return { ...result, started: result.started + 1 };
+        } catch (err) {
+          console.warn('[Video] batch create failed for', state, err);
+          return { ...result, failed: result.failed + 1 };
+        }
+      }),
+      Promise.resolve({ started: 0, failed: 0 }),
+    );
+    const { failed, started } = counts;
 
     wx.hideLoading();
     this.setData({ isBatchVideoCreating: false });
@@ -677,7 +695,7 @@ Page({
       const status = String((task && task.status) || '').toLowerCase();
       if (status === 'succeeded' && task.video_ready) {
         this.stopVideoTaskPolling();
-        const pet = this.data.pet;
+        const {pet} = this.data;
         if (pet && pet.currentStatus === state) {
           this._videoLoadId = (this._videoLoadId || 0) + 1;
           const streamUrl = getBackendVideoStreamUrl(state);
@@ -693,7 +711,7 @@ Page({
         });
       } else if (status === 'failed') {
         this.stopVideoTaskPolling();
-        const pet = this.data.pet;
+        const {pet} = this.data;
         if (pet && pet.currentStatus === state) {
           this.setData({ videoUnavailableReason: 'waiting_generation' });
         }
@@ -756,7 +774,5 @@ Page({
     this.setData({ scrollTop: this.data.scrollTop + 99999 });
   },
 
-  preventScroll() {
-    return;
-  }
+  preventScroll() {},
 });

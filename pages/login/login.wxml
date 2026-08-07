@@ -42,6 +42,8 @@
 
     <button class="submit-btn" disabled="{{!isSubmit}}" bindtap="login">登录</button>
 
+    <view class="demo-entry" bindtap="enterDemo">先体验 Demo →</view>
+
     <view class="auth-footer-link" bindtap="goRegister">还没有账号？去注册</view>
   </view>
 </view>

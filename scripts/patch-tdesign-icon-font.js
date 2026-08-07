@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Point TDesign icon @font-face at bundled static fonts (avoids CDN ERR_CACHE_MISS in devtools).
  * Re-run after `npm install` (wired via postinstall).

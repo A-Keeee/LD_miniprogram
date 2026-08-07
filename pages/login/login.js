@@ -5,6 +5,7 @@ import {
   listDevices,
   syncPetFromDevice,
 } from '../../utils/services/deviceService.js';
+import { enterDemoMode } from '../../utils/services/demoService.js';
 
 Page({
   data: {
@@ -46,6 +47,11 @@ Page({
 
   goRegister() {
     wx.navigateTo({ url: '/pages/register/register' });
+  },
+
+  enterDemo() {
+    enterDemoMode();
+    wx.reLaunch({ url: '/pages/home/index' });
   },
 
   async login() {
