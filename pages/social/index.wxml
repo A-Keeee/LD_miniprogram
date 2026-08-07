@@ -1,47 +1,21 @@
-<view class="container">
-  <view class="feed-list">
-    <block wx:for="{{posts}}" wx:key="id">
-      <view class="post-card">
-        <!-- Post Header -->
-        <view class="post-header">
-          <view class="author-info">
-            <image src="{{item.avatar}}" class="avatar" mode="aspectFill"></image>
-            <view>
-              <view class="author-name">{{item.author}}</view>
-              <view class="pet-name">与 {{item.petName}}</view>
-            </view>
-          </view>
-          <t-icon name="ellipsis" size="20px" color="#9ca3af" />
-        </view>
-        
-        <!-- Post Image -->
-        <image src="{{item.imageUrl}}" class="post-image" mode="aspectFill"></image>
-        
-        <!-- Post Actions -->
-        <view class="post-actions">
-          <view class="action-btn">
-            <t-icon name="heart" size="24px" color="#374151" />
-          </view>
-          <view class="action-btn">
-            <t-icon name="chat" size="24px" color="#374151" />
-          </view>
-          <view class="action-btn">
-            <t-icon name="share" size="24px" color="#374151" />
-          </view>
-        </view>
-        
-        <view class="likes-count">{{item.likes}} 次赞</view>
-        
-        <!-- Post Content -->
-        <view class="post-content">
-          <text class="author-bold">{{item.author}}</text>
-          <text>{{item.description}}</text>
-        </view>
-        
-        <view class="post-time">{{item.timestampStr}}</view>
-      </view>
-    </block>
+<view class="social-page">
+  <view class="social-header"><view class="eyebrow">附近的数字伙伴</view><view class="title">让 {{pet.name || '汤圆'}} 认识新朋友</view><view class="subtitle">轻轻碰一下，让两种性格相遇。</view></view>
+  <view class="bump-stage {{phase}}">
+    <view class="pet-orb left"><image src="{{pet.baseImage || '/static/demo/tangyuan.jpg'}}" mode="aspectFill"></image><text>{{pet.name || '汤圆'}}</text></view>
+    <view class="bump-signal"><view class="signal-ring ring-a"></view><view class="signal-ring ring-b"></view><text>{{phase === 'scanning' ? '寻找中' : '碰'}}</text></view>
+    <view class="pet-orb right"><image src="{{friend.avatar}}" mode="aspectFill"></image><text>{{phase === 'matched' ? friend.petName : '新朋友'}}</text></view>
   </view>
-  
-  <view class="footer-msg">- 到底了，去陪陪你的宠物吧 -</view>
+  <button class="bump-button" bindtap="startBump" loading="{{phase === 'scanning'}}" disabled="{{phase === 'scanning'}}">{{phase === 'matched' ? '再碰一次' : '开始碰一碰'}}</button>
+  <view class="shake-hint">摇一摇手机也可以触发 · 当前积分 {{points}}</view>
+
+  <view class="match-card" wx:if="{{phase === 'matched'}}">
+    <view class="match-heading"><view><view class="match-label">性格匹配</view><view class="match-title">汤圆 × {{friend.petName}}</view></view><view class="match-score">{{friend.matchScore}}<text>%</text></view></view>
+    <view wx:for="{{matchRows}}" wx:key="key" class="trait-row"><text>{{item.label}}</text><view class="trait-bars"><view class="trait-bar left" style="width:{{item.left}}%"></view><view class="trait-bar right" style="width:{{item.right}}%"></view></view><text>{{item.left}} / {{item.right}}</text></view>
+    <view class="match-actions"><button bindtap="collect" disabled="{{friend.collected}}">{{friend.collected ? '已收藏' : '收藏好友卡'}}</button><button class="outline" bindtap="openDetail">认识它</button></view>
+  </view>
+
+  <view class="saved-section" wx:if="{{friends.length}}"><view class="section-title">我的猫友</view><friend-card wx:for="{{friends}}" wx:key="id" wx:if="{{item.collected}}" friend="{{item}}" bind:open="openFriend" /></view>
 </view>
+
+<view class="sheet-mask" wx:if="{{showDetail}}" bindtap="closeDetail"></view>
+<view class="friend-sheet" wx:if="{{showDetail}}"><view class="friend-top"><image src="{{friend.avatar}}" mode="aspectFill"></image><view><view class="friend-name">{{friend.petName}}</view><view class="friend-owner">和 {{friend.ownerName}} 生活在一起</view></view></view><view class="tag-row"><text wx:for="{{friend.personalityTags}}" wx:key="*this">{{item}}</text></view><view class="story-preview">第一次见面时，奥利奥躲在光影交界处，汤圆把毛球轻轻推了过去……</view><view class="full-story" wx:if="{{friend.storyUnlocked}}">奥利奥先是装作没看见，尾巴却悄悄碰了碰毛球。几分钟后，它们已经默认彼此共享这块阳光，也共享今天新认识的你。</view><button wx:if="{{!friend.storyUnlocked}}" bindtap="unlockStory">30 积分解锁完整故事</button><button class="play-button" bindtap="playTogether">让它们玩一会儿</button></view>

@@ -4,6 +4,7 @@
     "pages/register/register",
     "pages/home/index",
     "pages/journal/index",
+    "pages/friend-play/index",
     "pages/social/index",
     "pages/setting/index"
   ],

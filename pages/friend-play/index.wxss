@@ -1,0 +1,14 @@
+page { background: #2f2738; color: #fff; }
+.play-page { min-height: 100vh; padding: 38rpx 28rpx; box-sizing: border-box; }
+.play-title { text-align: center; font-size: 42rpx; font-weight: 780; }
+.play-subtitle { margin-top: 8rpx; text-align: center; color: #cbbbd8; font-size: 22rpx; }
+.play-stage { position: relative; height: 760rpx; margin-top: 32rpx; border-radius: 42rpx; background: linear-gradient(180deg,#e9dcf5,#fff1df); overflow: hidden; }
+.cat { position: absolute; bottom: 100rpx; width: 300rpx; height: 390rpx; border-radius: 46% 46% 32% 32%; box-shadow: 0 20rpx 50rpx rgba(50,34,59,.2); }
+.cat-left { left: -70rpx; }.cat-right { right: -70rpx; }
+.ball { position: absolute; z-index: 2; left: 50%; bottom: 160rpx; font-size: 88rpx; transform: translateX(-50%); transition: left .55s cubic-bezier(.2,.8,.2,1),transform .55s; }
+.ball.left { left: 34%; transform: translateX(-50%) rotate(-100deg); }.ball.right { left: 66%; transform: translateX(-50%) rotate(100deg); }
+.bubble { position: absolute; left: 50%; top: 70rpx; width: 78%; padding: 24rpx; border-radius: 28rpx; background: rgba(255,255,255,.9); color: #4d3d50; font-size: 28rpx; text-align: center; transform: translateX(-50%); }
+.tap-hint { text-align: center; margin-top: 26rpx; color: #cbbbd8; font-size: 24rpx; }
+.photo-card { margin-top: 24rpx; padding: 28rpx; border-radius: 30rpx; background: #fff; color: #332a38; text-align: center; }
+.photo-title { font-size: 32rpx; font-weight: 780; }.photo-text { margin-top: 10rpx; color: #7b6d7d; font-size: 24rpx; }
+.photo-card button { margin-top: 22rpx; border: 0; border-radius: 999rpx; background: #ff8a34; color: #fff; font-size: 25rpx; }.photo-card button::after { border: 0; }

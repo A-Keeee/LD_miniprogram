@@ -1,0 +1,5 @@
+<view class="friend-card" bindtap="open">
+  <image class="friend-avatar" src="{{friend.avatar}}" mode="aspectFill"></image>
+  <view class="friend-info"><view class="friend-name">{{friend.petName}}</view><view class="friend-tags"><text wx:for="{{friend.personalityTags}}" wx:key="*this">{{index ? ' · ' : ''}}{{item}}</text></view></view>
+  <view class="match">{{friend.matchScore}}<text>%</text></view>
+</view>

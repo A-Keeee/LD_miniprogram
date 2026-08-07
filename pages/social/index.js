@@ -1,32 +1,133 @@
+import { isDemoEnabled } from '../../utils/services/demoService.js';
+import { getDemoPet } from '../../utils/services/demoStore.js';
+import { getBalance, grantDemoCredits } from '../../utils/services/pointsService.js';
+import { completeTask } from '../../utils/services/taskService.js';
+import {
+  calculateMatch,
+  collectFriend,
+  getFriendCards,
+  unlockFriendStory,
+} from '../../utils/services/socialDemoService.js';
+
+const app = getApp();
+
 Page({
   data: {
-    posts: [
-      {
-        id: '1',
-        author: '冯亦珂',
-        petName: '汤圆',
-        imageUrl: 'https://picsum.photos/400/400?random=1',
-        description: '今天汤圆一直在睡觉，好乖呀！#猫咪日常 #宠伴智联',
-        likes: 124,
-        timestampStr: '1 小时前',
-        avatar: 'https://picsum.photos/100/100?random=1'
-      },
-      {
-        id: '2',
-        author: '莫湘渝',
-        petName: '奥利奥',
-        imageUrl: 'https://picsum.photos/400/500?random=2',
-        description: '出门前生成的视频，看着它在门口等我的样子，心都化了。马上回家！',
-        likes: 89,
-        timestampStr: '2 小时前',
-        avatar: 'https://picsum.photos/100/100?random=2'
-      }
-    ]
+    pet: null,
+    friends: [],
+    friend: null,
+    phase: 'idle',
+    points: 0,
+    showDetail: false,
+    matchRows: [],
   },
-  
+
   onShow() {
+    if (!isDemoEnabled() && !wx.getStorageSync('access_token')) {
+      wx.redirectTo({ url: '/pages/login/login' });
+      return;
+    }
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ value: 'social' });
     }
-  }
+    const pet = isDemoEnabled() ? getDemoPet() : app.globalData.petProfile;
+    const friends = getFriendCards();
+    this.setData({ pet, friends, friend: friends[0], points: getBalance() });
+    this.startShakeListener();
+  },
+
+  onHide() {
+    this.stopShakeListener();
+    if (this._bumpTimer) clearTimeout(this._bumpTimer);
+  },
+
+  onUnload() {
+    this.stopShakeListener();
+    if (this._bumpTimer) clearTimeout(this._bumpTimer);
+  },
+
+  startShakeListener() {
+    this._accelerometerHandler = ({ x = 0, y = 0, z = 0 }) => {
+      if (Math.abs(x) + Math.abs(y) + Math.abs(z) > 3.2 && this.data.phase === 'idle') {
+        this.startBump();
+      }
+    };
+    wx.startAccelerometer({ interval: 'normal' });
+    wx.onAccelerometerChange(this._accelerometerHandler);
+  },
+
+  stopShakeListener() {
+    wx.stopAccelerometer();
+    if (this._accelerometerHandler && wx.offAccelerometerChange) {
+      wx.offAccelerometerChange(this._accelerometerHandler);
+    }
+    this._accelerometerHandler = null;
+  },
+
+  startBump() {
+    if (this.data.phase === 'scanning') return;
+    this.setData({ phase: 'scanning', showDetail: false });
+    wx.vibrateShort({ type: 'light' });
+    this._bumpTimer = setTimeout(() => {
+      const { friend, pet } = this.data;
+      const left = (pet && pet.personality) || { curiosity: 88, sociability: 62, energy: 74, clinginess: 83 };
+      const score = calculateMatch(left, friend.personality);
+      const labels = { curiosity: '好奇', sociability: '社交', energy: '活力', clinginess: '粘人' };
+      const matchRows = Object.keys(labels).map((key) => ({
+        key,
+        label: labels[key],
+        left: left[key],
+        right: friend.personality[key],
+      }));
+      this.setData({ phase: 'matched', friend: { ...friend, matchScore: score }, matchRows });
+      wx.vibrateShort({ type: 'medium' });
+    }, 1200);
+  },
+
+  collect() {
+    const friend = collectFriend(this.data.friend.id);
+    completeTask('friend');
+    const friends = getFriendCards();
+    this.setData({ friend, friends, points: getBalance() });
+    wx.showToast({ title: '已收藏好友卡', icon: 'success' });
+  },
+
+  openFriend(e) {
+    this.setData({ friend: e.detail.friend, showDetail: true });
+  },
+
+  openDetail() {
+    this.setData({ showDetail: true });
+  },
+
+  closeDetail() {
+    this.setData({ showDetail: false });
+  },
+
+  unlockStory() {
+    const result = unlockFriendStory(this.data.friend.id);
+    if (result.insufficient) {
+      if (!isDemoEnabled()) {
+        wx.showToast({ title: '积分不足，完成今日任务可获得积分', icon: 'none' });
+        return;
+      }
+      wx.showModal({
+        title: '积分不足',
+        content: '体验 Demo 可领取 100 积分，继续解锁故事和旅行。',
+        confirmText: '领取 100 分',
+        success: ({ confirm }) => {
+          if (!confirm) return;
+          grantDemoCredits();
+          this.setData({ points: getBalance() });
+        },
+      });
+      return;
+    }
+    const friends = getFriendCards();
+    this.setData({ friend: result.friend, friends, points: getBalance() });
+  },
+
+  playTogether() {
+    wx.navigateTo({ url: '/pages/friend-play/index' });
+  },
 });

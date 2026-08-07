@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "宠圈",
   "usingComponents": {
-    "t-icon": "tdesign-miniprogram/icon/icon"
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "friend-card": "/components/friend-card/index"
   }
 }
