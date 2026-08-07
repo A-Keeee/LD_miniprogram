@@ -50,6 +50,17 @@
     </view>
   </view>
 
+  <view class="task-section" wx:if="{{featuredTask}}"><view class="section-row task-heading"><view class="section-title">今日任务</view><view class="task-progress">{{tasks.length}} 项陪伴计划</view></view><task-card task="{{featuredTask}}" bind:select="handleTaskSelect" /></view>
+
+  <view class="sheet-mask" wx:if="{{showTaskSheet}}" bindtap="closeTaskSheet"></view>
+  <view class="task-sheet" wx:if="{{showTaskSheet}}">
+    <view class="sheet-handle"></view>
+    <view class="sheet-title">{{taskSheetType === 'scene' ? '告诉我你看见了什么' : '你今天感觉怎么样？'}}</view>
+    <button wx:if="{{taskSheetType === 'scene'}}" class="photo-button" bindtap="chooseScenePhoto">拍摄或选择一张照片</button>
+    <view class="preset-grid" wx:if="{{taskSheetType === 'scene'}}"><view wx:for="{{scenePresets}}" wx:key="*this" class="preset-item" data-label="{{item}}" bindtap="selectScenePreset">{{item}}</view></view>
+    <view class="preset-grid mood-grid" wx:else><view wx:for="{{moodPresets}}" wx:key="*this" class="preset-item" data-mood="{{item}}" bindtap="selectOwnerMood">{{item}}</view></view>
+  </view>
+
   <view class="chat-overlay" wx:if="{{showChat}}" catchtouchmove="preventScroll">
     <view class="chat-mask" bindtap="toggleChat"></view>
     <view class="chat-modal">

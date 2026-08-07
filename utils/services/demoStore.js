@@ -5,7 +5,7 @@ export const DEMO_VERSION = 1;
 
 const DOMAINS = [
   'pet', 'events', 'points', 'ledger', 'tasks', 'friends', 'journal',
-  'travel', 'postcards', 'souvenirs', 'scene', 'settings',
+  'travel', 'postcards', 'souvenirs', 'scene', 'settings', 'scene_context', 'owner_mood',
 ];
 
 const cloneDefault = (value) => {
@@ -88,4 +88,3 @@ export const resetAllDemoData = () => {
   DOMAINS.forEach((domain) => safeRemove(`${DEMO_PREFIX}${domain}`));
   safeRemove(`${DEMO_PREFIX}version`);
 };
-

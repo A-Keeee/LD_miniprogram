@@ -30,8 +30,14 @@ import {
   getTodayStats,
 } from '../../utils/services/eventService.js';
 import { getLocalChatReply, getStatusMeta, getStatusThought } from '../../utils/services/narrativeService.js';
-import { earn, getBalance } from '../../utils/services/pointsService.js';
+import { getBalance } from '../../utils/services/pointsService.js';
 import { startAutoScenario, stopAutoScenario } from '../../utils/services/demoScenarioService.js';
+import {
+  completeTask,
+  getTaskList,
+  saveOwnerMood,
+  saveSceneContext,
+} from '../../utils/services/taskService.js';
 
 const app = getApp();
 
@@ -107,6 +113,12 @@ Page({
     moodScore: 68,
     points: 0,
     todayStats: { eventCount: 0, activeMinutes: 0, restText: '—' },
+    tasks: [],
+    featuredTask: null,
+    showTaskSheet: false,
+    taskSheetType: '',
+    scenePresets: ['窗边', '客厅', '办公桌', '公园', '夜景'],
+    moodPresets: ['很开心', '有点累', '很平静', '想被陪伴'],
 
     sensors: { battery: 85, temp: 24 },
     statusConfig: {
@@ -254,6 +266,8 @@ Page({
       moodScore: pet.moodScore || meta.moodScore,
       points: getBalance(),
       todayStats: getTodayStats(),
+      tasks: getTaskList(),
+      featuredTask: getTaskList().find((task) => !task.completed) || getTaskList()[0] || null,
       sensors: {
         battery: pet.battery || this.data.sensors.battery,
         temp: pet.temp || this.data.sensors.temp,
@@ -782,12 +796,13 @@ Page({
       thought: '收到啦，再摸一下也不是不行。',
       icon: '🧡',
     });
-    const reward = earn({ key: 'touch_first', amount: 10, reason: '第一次摸摸汤圆' });
+    const result = completeTask('touch');
     this.setData({
       isPetting: true,
       thought: '收到啦，再摸一下也不是不行。',
-      points: reward.balance,
+      points: result.reward ? result.reward.balance : getBalance(),
       todayStats: getTodayStats(),
+      tasks: getTaskList(),
     });
     setTimeout(() => {
       this.setData({ isPetting: false });
@@ -801,6 +816,62 @@ Page({
 
   openJournal() {
     wx.navigateTo({ url: '/pages/journal/index' });
+  },
+
+  handleTaskSelect(e) {
+    const { task } = e.detail;
+    if (!task || task.completed) return;
+    if (task.type === 'touch') {
+      this.triggerHaptic();
+      return;
+    }
+    if (task.type === 'friend') {
+      wx.switchTab({ url: '/pages/social/index' });
+      return;
+    }
+    this.setData({ showTaskSheet: true, taskSheetType: task.type });
+  },
+
+  closeTaskSheet() {
+    this.setData({ showTaskSheet: false, taskSheetType: '' });
+  },
+
+  selectScenePreset(e) {
+    saveSceneContext({ label: e.currentTarget.dataset.label });
+    this.closeTaskSheet();
+    this.refreshExperienceState('你分享的风景，我已经认真记下来了。');
+  },
+
+  chooseScenePhoto() {
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      success: (result) => {
+        const path = result.tempFiles && result.tempFiles[0] && result.tempFiles[0].tempFilePath;
+        if (!path) return;
+        wx.saveFile({
+          tempFilePath: path,
+          success: ({ savedFilePath }) => {
+            saveSceneContext({ label: '你眼前的风景', imagePath: savedFilePath });
+            this.closeTaskSheet();
+            this.refreshExperienceState('照片收到啦，我会把它放进今晚的梦里。');
+          },
+          fail: () => {
+            saveSceneContext({ label: '你眼前的风景' });
+            this.closeTaskSheet();
+            this.refreshExperienceState('照片没能保存，但你说的风景我记住了。');
+          },
+        });
+      },
+      fail: () => wx.showToast({ title: '也可以选择下方预设场景', icon: 'none' }),
+    });
+  },
+
+  selectOwnerMood(e) {
+    const { mood } = e.currentTarget.dataset;
+    saveOwnerMood(mood);
+    this.closeTaskSheet();
+    this.refreshExperienceState(`知道啦。你${mood}的时候，我会多陪你一会儿。`);
   },
 
   toggleChat() {

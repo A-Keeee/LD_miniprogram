@@ -1,0 +1,5 @@
+<view class="task-card {{task.completed ? 'completed' : ''}}" bindtap="handleTap">
+  <view class="task-check">{{task.completed ? '✓' : '○'}}</view>
+  <view class="task-main"><view class="task-title">{{task.title}}</view><view class="task-desc">{{task.desc}}</view></view>
+  <view class="task-reward">{{task.completed ? '已完成' : '+' + task.reward}}</view>
+</view>

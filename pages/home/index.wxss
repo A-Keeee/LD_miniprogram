@@ -40,6 +40,8 @@ page { background: #f7f4ee; color: #211b18; }
 .today-stat { display: flex; flex-direction: column; align-items: center; }
 .stat-value { font-size: 31rpx; font-weight: 750; }
 .stat-label { margin-top: 7rpx; color: #998c84; font-size: 21rpx; }
+.task-section { margin-top:30rpx; }.task-heading { margin-bottom:16rpx; padding:0 4rpx; }.task-progress { color:#a2958e; font-size:21rpx; }
+.sheet-mask { position:fixed; z-index:90; inset:0; background:rgba(33,27,24,.46); }.task-sheet { position:fixed; z-index:91; left:0; right:0; bottom:0; padding:18rpx 28rpx calc(38rpx + env(safe-area-inset-bottom)); border-radius:38rpx 38rpx 0 0; background:#fffdf9; }.sheet-handle { width:70rpx; height:8rpx; margin:0 auto 28rpx; border-radius:99rpx; background:#ded5cf; }.sheet-title { font-size:34rpx; font-weight:750; }.photo-button { margin:26rpx 0 18rpx; border:0; border-radius:999rpx; background:#ff8a34; color:#fff; font-size:26rpx; }.photo-button::after { border:0; }.preset-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14rpx; margin-top:22rpx; }.mood-grid { grid-template-columns:repeat(2,1fr); }.preset-item { padding:24rpx 12rpx; border-radius:20rpx; background:#f7f2ec; text-align:center; color:#5f524b; font-size:25rpx; }.preset-item:active { background:#fff0e4; color:#e66c18; }
 .home-empty { display: flex; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; background: #f7f4ee; color: #81756f; }
 .empty-emoji { margin-bottom: 20rpx; font-size: 72rpx; }
 .chat-overlay { position: fixed; z-index: 1000; inset: 0; }
