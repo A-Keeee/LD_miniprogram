@@ -1,0 +1,1 @@
+<view class="postcard" bindtap="open"><image src="{{postcard.cover}}" mode="aspectFill"></image><view class="shade"></view><view class="meta"><view class="from">FROM · {{postcard.destination}}</view><view class="message">“{{postcard.message}}”</view></view></view>

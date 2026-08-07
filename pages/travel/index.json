@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "旅行",
+  "usingComponents": {
+    "postcard-card": "/components/postcard-card/index"
+  }
+}
