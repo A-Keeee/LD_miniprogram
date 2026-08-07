@@ -23,7 +23,14 @@ import {
   syncPetFromDevice,
 } from '../../utils/services/deviceService.js';
 import { isDemoEnabled, seedDemoData } from '../../utils/services/demoService.js';
-import { getDemoPet } from '../../utils/services/demoStore.js';
+import { getDemoPet, getEvents } from '../../utils/services/demoStore.js';
+import {
+  recordInteractionEvent,
+  recordPetStatusEvent,
+  getTodayStats,
+} from '../../utils/services/eventService.js';
+import { getLocalChatReply, getStatusMeta, getStatusThought } from '../../utils/services/narrativeService.js';
+import { earn, getBalance } from '../../utils/services/pointsService.js';
 
 const app = getApp();
 
@@ -92,6 +99,13 @@ Page({
     devices: [],
     isSwitchingPet: false,
     liveSyncHint: '',
+    isDemo: false,
+    isPetting: false,
+    thought: '',
+    moodLabel: '安静放松',
+    moodScore: 68,
+    points: 0,
+    todayStats: { eventCount: 0, activeMinutes: 0, restText: '—' },
 
     sensors: { battery: 85, temp: 24 },
     statusConfig: {
@@ -141,6 +155,7 @@ Page({
       this.stopVideoTaskPolling();
       this.setData({
         pet: getDemoPet(),
+        isDemo: true,
         videoSrc: null,
         videoError: false,
         videoDisabled: false,
@@ -148,7 +163,7 @@ Page({
         devices: [],
         activeDeviceId: '',
         activeDeviceName: '',
-      });
+      }, () => this.refreshExperienceState());
       return;
     }
 
@@ -174,7 +189,9 @@ Page({
       return;
     }
 
-    this.setData({ pet }, () => {
+    this.setData({ pet, isDemo: false }, () => {
+      recordPetStatusEvent({ status: pet.currentStatus, source: 'manual' });
+      this.refreshExperienceState();
       if (!this.data.videoDisabled) {
         this._videoLoadId = (this._videoLoadId || 0) + 1;
         this.loadVideo(this.data.pet);
@@ -218,6 +235,26 @@ Page({
     }
   },
 
+  refreshExperienceState(temporaryThought) {
+    const { pet } = this.data;
+    if (!pet) return;
+    const events = getEvents();
+    const lastEvent = [...events].reverse().find((event) => event.status === pet.currentStatus)
+      || { id: pet.currentStatus, status: pet.currentStatus };
+    const meta = getStatusMeta(pet.currentStatus);
+    this.setData({
+      thought: temporaryThought || getStatusThought(lastEvent),
+      moodLabel: meta.moodLabel,
+      moodScore: pet.moodScore || meta.moodScore,
+      points: getBalance(),
+      todayStats: getTodayStats(),
+      sensors: {
+        battery: pet.battery || this.data.sensors.battery,
+        temp: pet.temp || this.data.sensors.temp,
+      },
+    });
+  },
+
   async handleSelectPet(e) {
     const deviceId = e.currentTarget.dataset.id;
     if (!deviceId || deviceId === this.data.activeDeviceId || this.data.isSwitchingPet) {
@@ -244,7 +281,7 @@ Page({
         chatHistory: [],
         showChat: false,
         liveSyncHint: activeDeviceId ? '' : '请先在设置页绑定设备',
-      });
+      }, () => this.refreshExperienceState());
       if (typeof this.getTabBar === 'function' && this.getTabBar()) {
         this.getTabBar().setData({ show: true });
       }
@@ -334,6 +371,8 @@ Page({
         const pet = { ...this.data.pet, currentStatus: status };
         this.setData({ pet, liveSyncHint: '' });
         app.updatePetProfile(pet);
+        recordPetStatusEvent({ status, source: 'backend' });
+        this.refreshExperienceState();
         if (!this.data.videoDisabled) {
           this._videoLoadId = (this._videoLoadId || 0) + 1;
           this.loadVideo(pet);
@@ -513,6 +552,8 @@ Page({
       videoUnavailableReason: '',
     });
     app.updatePetProfile(pet);
+    recordPetStatusEvent({ status: newStatus, source: 'manual' });
+    this.refreshExperienceState();
     this.loadVideo(pet);
   },
 
@@ -726,6 +767,32 @@ Page({
 
   triggerHaptic() {
     wx.vibrateShort({ type: 'medium' });
+    if (this.data.isPetting) return;
+    recordInteractionEvent({
+      type: 'user_touch',
+      title: '你摸了摸我',
+      thought: '收到啦，再摸一下也不是不行。',
+      icon: '🧡',
+    });
+    const reward = earn({ key: 'touch_first', amount: 10, reason: '第一次摸摸汤圆' });
+    this.setData({
+      isPetting: true,
+      thought: '收到啦，再摸一下也不是不行。',
+      points: reward.balance,
+      todayStats: getTodayStats(),
+    });
+    setTimeout(() => {
+      this.setData({ isPetting: false });
+      this.refreshExperienceState();
+    }, 800);
+  },
+
+  openPetBag() {
+    wx.navigateTo({ url: '/pages/petbag/index' });
+  },
+
+  openJournal() {
+    wx.switchTab({ url: '/pages/journal/index' });
   },
 
   toggleChat() {
@@ -756,7 +823,9 @@ Page({
     }, this.scrollToBottom);
 
     try {
-      const reply = await chatWithPet(pet, userMsg);
+      const reply = this.data.isDemo
+        ? getLocalChatReply(pet, userMsg)
+        : await chatWithPet(pet, userMsg);
       this.setData({
         chatHistory: [...this.data.chatHistory, { sender: 'pet', text: reply }],
         isTyping: false
@@ -764,7 +833,7 @@ Page({
     } catch (err) {
       console.error('Chat error:', err);
       this.setData({
-        chatHistory: [...this.data.chatHistory, { sender: 'pet', text: '喵? (连接断开...)' }],
+        chatHistory: [...this.data.chatHistory, { sender: 'pet', text: getLocalChatReply(pet, userMsg) }],
         isTyping: false
       }, this.scrollToBottom);
     }
